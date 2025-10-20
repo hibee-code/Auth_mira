@@ -17,15 +17,17 @@ const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const bcrypt = require("bcrypt");
-const user_model_1 = require("../users/model/user.model");
 const mailer_service_1 = require("../mailer/mailer.service");
 const user_type_enum_1 = require("../common/enum/user-type.enum");
 const otp_service_1 = require("../otp/otp.service");
+const jwt_1 = require("@nestjs/jwt");
+const user_model_1 = require("../users/model/user.model");
 let AuthService = class AuthService {
-    constructor(userModel, emailService, otpService) {
+    constructor(userModel, emailService, otpService, jwtService) {
         this.userModel = userModel;
         this.emailService = emailService;
         this.otpService = otpService;
+        this.jwtService = jwtService;
     }
     async signup(signupDto) {
         const { password, userType, studentProfile, professionalProfile, ...rest } = signupDto;
@@ -42,6 +44,53 @@ let AuthService = class AuthService {
         await this.emailService.sendWelcomeAndVerificationEmail(savedUser.email, savedUser.firstName, userType, otpCode);
         return savedUser;
     }
+    async verifyEmail(dto) {
+        const user = await this.userModel.findOne({ email: dto.email });
+        if (!user)
+            throw new common_1.BadRequestException('User not found');
+        await this.otpService.verifyOtp(user._id, dto.code);
+        user.isVerified = true;
+        await user.save();
+        return { message: 'Email verified successfully' };
+    }
+    async resendOtp(dto) {
+        const user = await this.userModel.findOne({ email: dto.email });
+        if (!user)
+            throw new common_1.BadRequestException('User not found');
+        const otp = await this.otpService.createOtp(user._id, user.email);
+        await this.emailService.sendResendOtpEmail(user.email, user.firstName, otp);
+        return { message: 'New verification code sent successfully.' };
+    }
+    async login(dto) {
+        const user = await this.userModel.findOne({ email: dto.email });
+        if (!user)
+            throw new common_1.UnauthorizedException('Invalid credentials');
+        const valid = await bcrypt.compare(dto.password, user.password);
+        if (!valid)
+            throw new common_1.UnauthorizedException('Invalid credentials');
+        if (!user.isVerified)
+            throw new common_1.UnauthorizedException('Please verify your email first');
+        const payload = { sub: user._id, email: user.email, userType: user.userType };
+        const accessToken = this.jwtService.sign(payload);
+        return { accessToken };
+    }
+    async forgotPassword(dto) {
+        const user = await this.userModel.findOne({ email: dto.email });
+        if (!user)
+            throw new common_1.BadRequestException('User not found');
+        const otp = await this.otpService.createOtp(user._id, user.email);
+        await this.emailService.sendPasswordReset(user.email, otp);
+        return { message: 'Password reset code sent' };
+    }
+    async resetPassword(dto) {
+        const user = await this.userModel.findOne({ email: dto.email });
+        if (!user)
+            throw new common_1.BadRequestException('User not found');
+        await this.otpService.verifyOtp(user._id, dto.code);
+        user.password = await bcrypt.hash(dto.newPassword, 10);
+        await user.save();
+        return { message: 'Password reset successful' };
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
@@ -49,6 +98,7 @@ exports.AuthService = AuthService = __decorate([
     __param(0, (0, mongoose_1.InjectModel)(user_model_1.User.name)),
     __metadata("design:paramtypes", [mongoose_2.Model,
         mailer_service_1.EmailService,
-        otp_service_1.OtpService])
+        otp_service_1.OtpService,
+        jwt_1.JwtService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

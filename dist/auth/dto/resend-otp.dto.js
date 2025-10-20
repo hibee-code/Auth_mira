@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ResendOtpDto = void 0;
 const class_validator_1 = require("class-validator");
-const constants_1 = require("../../common/constants");
 class ResendOtpDto {
 }
 exports.ResendOtpDto = ResendOtpDto;
@@ -19,9 +18,4 @@ __decorate([
     (0, class_validator_1.IsEmail)(),
     __metadata("design:type", String)
 ], ResendOtpDto.prototype, "email", void 0);
-__decorate([
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsIn)([constants_1.OTP_PURPOSE.EMAIL_VERIFICATION, constants_1.OTP_PURPOSE.PASSWORD_RESET]),
-    __metadata("design:type", String)
-], ResendOtpDto.prototype, "purpose", void 0);
 //# sourceMappingURL=resend-otp.dto.js.map

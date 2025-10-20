@@ -1,35 +1,65 @@
+// src/auth/auth.module.ts
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
+import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { UsersModule } from '../users/users.module';
-import { OtpModule } from '../otp/otp.module';
-import { MailerModule } from '../mailer/mailer.module';
-import { JwtStrategy } from './jwt.strategy';
-import { RolesGuard } from '../common/guards/roles.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { OtpService } from '../otp/otp.service';
+import { OtpRepository } from '../otp/otp.repository';
+import { JwtStrategy } from './jwt/jwt.strategy';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { EmailService } from '../mailer/mailer.service';
+import { Otp, OtpSchema } from '../otp/schema/otp.schema';
+import { User, userModel } from 'src/users/model/user.model';
+
 
 @Module({
   imports: [
     ConfigModule,
     PassportModule,
+    /**
+     * ✅ Mongoose Schemas
+     */
+    MongooseModule.forFeature([
+      { name: User.name, schema: userModel },
+      { name: Otp.name, schema: OtpSchema },
+    ]),
+
+    /**
+     * ✅ JWT Setup (Async for security)
+     */
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET') || 'change_this',
-        signOptions: { expiresIn: config.get<string>('JWT_EXPIRES_IN') || '3600s' },
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET') || 'fallback_secret',
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1h',
+        },
       }),
     }),
-    UsersModule,
-    OtpModule,
-    MailerModule,
   ],
+
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, { provide: APP_GUARD, useClass: JwtAuthGuard }, { provide: APP_GUARD, useClass: RolesGuard }],
+
+  providers: [
+    AuthService,
+    OtpService,
+    OtpRepository,
+    EmailService,
+    JwtStrategy,
+
+    /**
+     * ✅ Guards registered globally
+     */
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
+  ],
+
   exports: [AuthService],
 })
 export class AuthModule {}

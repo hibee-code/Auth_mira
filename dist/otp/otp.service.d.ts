@@ -1,12 +1,10 @@
-import { OtpRepository } from './otp.repository';
-import { ConfigService } from '@nestjs/config';
-import { Types } from 'mongoose';
+import { Model } from 'mongoose';
+import { Otp } from './schema/otp.schema';
 export declare class OtpService {
-    private repo;
-    private config;
-    constructor(repo: OtpRepository, config: ConfigService);
-    private generateCode;
-    createOtp(userId: string | Types.ObjectId, purpose: string): Promise<any>;
-    canResend(userId: string | Types.ObjectId, purpose: string): Promise<boolean>;
-    verifyOtp(userId: string | Types.ObjectId, code: string, purpose: string): Promise<any>;
+    private readonly otpModel;
+    constructor(otpModel: Model<Otp>);
+    private generateOtpCode;
+    createOtp(userId: string, email: string): Promise<string>;
+    verifyOtp(userId: string, code: string): Promise<boolean>;
+    resendOtp(userId: string, email: string): Promise<string>;
 }

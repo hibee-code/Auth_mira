@@ -8,161 +8,40 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
-const users_repository_1 = require("./users.repository");
-const bcrypt = require("bcrypt");
-const user_schema_1 = require("./schemas/user.schema");
+const mongoose_1 = require("@nestjs/mongoose");
+const mongoose_2 = require("mongoose");
+const users_schema_1 = require("./schema/users.schema");
 let UsersService = class UsersService {
-    constructor(usersRepo) {
-        this.usersRepo = usersRepo;
+    constructor(userModel) {
+        this.userModel = userModel;
     }
-    async createUser(dto) {
-        try {
-            const user = await this.usersRepo.create({
-                firstName: dto.fullName.split(' ')[0],
-                lastName: dto.fullName.split(' ').slice(1).join(' '),
-                email: dto.email,
-                password: dto.password,
-                role: dto.role,
-            });
-            return user;
-        }
-        catch (err) {
-            if (err && err.code === 11000) {
-                throw new common_1.ConflictException('Email already in use');
-            }
-            throw err;
-        }
+    async create(data) {
+        const user = new this.userModel(data);
+        return user.save();
     }
-    async validateUserCredentials(email, password) {
-        const user = await this.usersRepo.findByEmail(email);
+    async findByEmail(email) {
+        return this.userModel.findOne({ email }).exec();
+    }
+    async findById(id) {
+        const user = await this.userModel.findById(id).exec();
         if (!user)
-            return null;
-        const match = await bcrypt.compare(password, user.password);
-        if (!match)
-            return null;
+            throw new common_1.NotFoundException('User not found');
         return user;
     }
-    findByEmail(email) {
-        return this.usersRepo.findByEmail(email);
-    }
-    findById(id) {
-        return this.usersRepo.findById(id);
-    }
-    markEmailVerified(userId) {
-        return this.usersRepo.markEmailVerified(userId);
-    }
-    async resetPassword(userId, newPassword) {
-        const hashed = await bcrypt.hash(newPassword, 12);
-        return this.usersRepo.updatePassword(userId, hashed);
-    }
-    async createStudentUser(dto) {
-        try {
-            const user = await this.usersRepo.create({
-                firstName: dto.firstName,
-                lastName: dto.lastName,
-                username: dto.username,
-                email: dto.email,
-                password: dto.password,
-                countryCode: dto.countryCode,
-                phoneNumber: dto.phoneNumber,
-                role: user_schema_1.UserRole.STUDENT,
-                studentProfile: {
-                    institution: dto.institution,
-                    faculty: dto.faculty,
-                    department: dto.department,
-                    levelType: dto.levelType,
-                    level: dto.level,
-                },
-                termsAccepted: !!dto.termsAccepted,
-                termsAcceptedAt: dto.termsAccepted ? new Date() : undefined,
-            });
-            if (dto.referralCode) {
-                await this.usersRepo.applyReferral(user._id, dto.referralCode);
-            }
-            return user;
-        }
-        catch (err) {
-            if (err && err.code === 11000)
-                throw new common_1.ConflictException('Email or username already in use');
-            throw err;
-        }
-    }
-    async createProfessionalUser(dto) {
-        try {
-            const user = await this.usersRepo.create({
-                firstName: dto.firstName,
-                lastName: dto.lastName,
-                username: dto.username,
-                email: dto.email,
-                password: dto.password,
-                countryCode: dto.countryCode,
-                phoneNumber: dto.phoneNumber,
-                role: user_schema_1.UserRole.PROFESSIONAL,
-                professionalProfile: {
-                    title: dto.title,
-                    fieldOfSpecialization: dto.fieldOfSpecialization,
-                    organization: dto.organization,
-                    yearsOfExperience: dto.yearsOfExperience,
-                },
-                termsAccepted: !!dto.termsAccepted,
-                termsAcceptedAt: dto.termsAccepted ? new Date() : undefined,
-            });
-            if (dto.referralCode) {
-                await this.usersRepo.applyReferral(user._id, dto.referralCode);
-            }
-            return user;
-        }
-        catch (err) {
-            if (err && err.code === 11000)
-                throw new common_1.ConflictException('Email or username already in use');
-            throw err;
-        }
-    }
-    async createHybridUser(dto) {
-        try {
-            const user = await this.usersRepo.create({
-                firstName: dto.firstName,
-                lastName: dto.lastName,
-                username: dto.username,
-                email: dto.email,
-                password: dto.password,
-                countryCode: dto.countryCode,
-                phoneNumber: dto.phoneNumber,
-                role: user_schema_1.UserRole.HYBRID,
-                studentProfile: {
-                    institution: dto.institution,
-                    faculty: dto.faculty,
-                    department: dto.department,
-                    levelType: dto.levelType,
-                    level: dto.level,
-                },
-                professionalProfile: {
-                    title: dto.title,
-                    fieldOfSpecialization: dto.fieldOfSpecialization,
-                    organization: dto.organization,
-                    yearsOfExperience: dto.yearsOfExperience,
-                },
-                termsAccepted: !!dto.termsAccepted,
-                termsAcceptedAt: dto.termsAccepted ? new Date() : undefined,
-            });
-            if (dto.referralCode) {
-                await this.usersRepo.applyReferral(user._id, dto.referralCode);
-            }
-            return user;
-        }
-        catch (err) {
-            if (err && err.code === 11000)
-                throw new common_1.ConflictException('Email or username already in use');
-            throw err;
-        }
+    async findAll() {
+        return this.userModel.find().exec();
     }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [users_repository_1.UsersRepository])
+    __param(0, (0, mongoose_1.InjectModel)(users_schema_1.User.name)),
+    __metadata("design:paramtypes", [mongoose_2.Model])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

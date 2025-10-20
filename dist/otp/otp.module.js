@@ -9,9 +9,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OtpModule = void 0;
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
-const otp_schema_1 = require("./schemas/otp.schema");
 const otp_service_1 = require("./otp.service");
 const otp_repository_1 = require("./otp.repository");
+const otp_schema_1 = require("./schema/otp.schema");
 let OtpModule = class OtpModule {
 };
 exports.OtpModule = OtpModule;

@@ -1,14 +1,13 @@
-// src/auth/services/email.service.ts
+// src/mail/email.service.ts
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
-//import { OtpType } from '../../common/enums/otp-type.enum';
 
 @Injectable()
 export class EmailService {
   private transporter: nodemailer.Transporter;
 
-  constructor(private configService: ConfigService) {
+  constructor(private readonly configService: ConfigService) {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get('MAIL_HOST'),
       port: this.configService.get('MAIL_PORT'),
@@ -20,166 +19,124 @@ export class EmailService {
     });
   }
 
-  /**
-   * Send verification email
-   */
-  async sendVerificationEmail(email: string, code: string, firstName: string): Promise<void> {
+  /** 🔹 Send unified Welcome + Verification Email */
+  async sendWelcomeAndVerificationEmail(
+    email: string,
+    firstName: string,
+    userType: string,
+    code: string,
+  ): Promise<void> {
+    const subject = this.getEmailSubject('welcome_verify');
+    const html = this.getWelcomeVerificationTemplate(firstName, userType, code);
+    await this.sendMail(email, subject, html);
+  }
+
+  /** 🔹 Send Resend OTP Email (when user requests another OTP) */
+  async sendResendOtpEmail(email: string, firstName: string, code: string): Promise<void> {
+    const subject = this.getEmailSubject('resend_otp');
+    const html = this.getResendOtpTemplate(firstName, code);
+    await this.sendMail(email, subject, html);
+  }
+
+  /** 🔹 Send Password Reset Email */
+  async sendPasswordReset(email: string, code: string): Promise<void> {
+    const subject = this.getEmailSubject('reset');
+    const html = `
+      <h2>Password Reset</h2>
+      <p>Your password reset code is:</p>
+      <div style="font-size:24px;font-weight:bold;color:#0a4d68;">${code}</div>
+      <p>This code expires in <strong>10 minutes</strong>.</p>
+    `;
+    await this.sendMail(email, subject, html);
+  }
+
+  /** 🔹 Internal Mail Sender */
+  private async sendMail(to: string, subject: string, html: string): Promise<void> {
     const mailOptions = {
       from: `EdMira <${this.configService.get('MAIL_FROM')}>`,
-      to: email,
-      subject: 'Verify Your Email - EdMira',
-      html: this.getVerificationEmailTemplate(firstName, code),
+      to,
+      subject,
+      html,
     };
-
     await this.transporter.sendMail(mailOptions);
   }
 
-  /**
-   * Send password reset email
-   */
-  async sendPasswordResetEmail(email: string, code: string, firstName: string): Promise<void> {
-    const mailOptions = {
-      from: `EdMira <${this.configService.get('MAIL_FROM')}>`,
-      to: email,
-      subject: 'Reset Your Password - EdMira',
-      html: this.getPasswordResetEmailTemplate(firstName, code),
-    };
-
-    await this.transporter.sendMail(mailOptions);
+  /** 🔹 Dynamic Subject Resolver */
+  private getEmailSubject(type: string): string {
+    switch (type) {
+      case 'welcome_verify':
+        return 'Welcome to EdMira - Verify Your Account';
+      case 'resend_otp':
+        return 'EdMira - Your New Verification Code';
+      case 'reset':
+        return 'Reset Your Password - EdMira';
+      default:
+        return 'EdMira Notification';
+    }
   }
 
-  /**
-   * Send welcome email
-   */
-  async sendWelcomeEmail(email: string, firstName: string): Promise<void> {
-    const mailOptions = {
-      from: `EdMira <${this.configService.get('MAIL_FROM')}>`,
-      to: email,
-      subject: 'Welcome to EdMira!',
-      html: this.getWelcomeEmailTemplate(firstName),
-    };
+  /** 🔹 Welcome Template (for signup) */
+  private getWelcomeVerificationTemplate(
+    firstName: string,
+    userType: string,
+    code: string,
+  ): string {
+    const welcomeMessage = this.getWelcomeMessage(firstName, userType);
 
-    await this.transporter.sendMail(mailOptions);
-  }
-
-  /**
-   * Email template for verification
-   */
-  private getVerificationEmailTemplate(firstName: string, code: string): string {
     return `
       <!DOCTYPE html>
       <html>
         <head>
           <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #0a4d68; color: white; padding: 20px; text-align: center; }
-            .content { background-color: #f9f9f9; padding: 30px; }
-            .code-box { background-color: #fff; border: 2px dashed #0a4d68; padding: 20px; text-align: center; margin: 20px 0; }
-            .code { font-size: 32px; font-weight: bold; color: #0a4d68; letter-spacing: 5px; }
-            .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-            .warning { color: #d32f2f; font-size: 14px; margin-top: 15px; }
+            body { font-family: Arial, sans-serif; color: #333; background-color: #f6f8fa; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; background: white; border-radius: 8px; }
+            .header { background-color: #0a4d68; color: white; text-align: center; padding: 15px; border-radius: 8px 8px 0 0; }
+            .content { padding: 25px; line-height: 1.6; }
+            .code-box { background-color: #eef6ff; border: 2px dashed #0a4d68; text-align: center; padding: 15px; margin: 20px 0; border-radius: 6px; }
+            .code { font-size: 28px; font-weight: bold; color: #0a4d68; letter-spacing: 4px; }
+            .footer { text-align: center; color: #777; font-size: 12px; padding: 10px; margin-top: 20px; }
           </style>
         </head>
         <body>
           <div class="container">
-            <div class="header">
-              <h1>EdMira</h1>
-            </div>
+            <div class="header"><h1>Welcome to EdMira!</h1></div>
             <div class="content">
-              <h2>Hello ${firstName},</h2>
-              <p>Thank you for registering with EdMira! Please use the verification code below to verify your email address.</p>
-              <div class="code-box">
-                <div class="code">${code}</div>
-              </div>
+              <p>${welcomeMessage}</p>
+              <p>Please verify your email using the code below:</p>
+              <div class="code-box"><div class="code">${code}</div></div>
               <p>This code will expire in <strong>10 minutes</strong>.</p>
-              <p class="warning">If you didn't request this code, please ignore this email.</p>
             </div>
-            <div class="footer">
-              <p>&copy; ${new Date().getFullYear()} EdMira. All rights reserved.</p>
-            </div>
+            <div class="footer">&copy; ${new Date().getFullYear()} EdMira</div>
           </div>
         </body>
       </html>
     `;
   }
 
-  /**
-   * Email template for password reset
-   */
-  private getPasswordResetEmailTemplate(firstName: string, code: string): string {
+  /** 🔹 Template for Resent OTP Email */
+  private getResendOtpTemplate(firstName: string, code: string): string {
     return `
-      <!DOCTYPE html>
       <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #0a4d68; color: white; padding: 20px; text-align: center; }
-            .content { background-color: #f9f9f9; padding: 30px; }
-            .code-box { background-color: #fff; border: 2px dashed #d32f2f; padding: 20px; text-align: center; margin: 20px 0; }
-            .code { font-size: 32px; font-weight: bold; color: #d32f2f; letter-spacing: 5px; }
-            .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-            .warning { color: #d32f2f; font-size: 14px; margin-top: 15px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>EdMira</h1>
-            </div>
-            <div class="content">
-              <h2>Hello ${firstName},</h2>
-              <p>We received a request to reset your password. Use the code below to proceed:</p>
-              <div class="code-box">
-                <div class="code">${code}</div>
-              </div>
-              <p>This code will expire in <strong>10 minutes</strong>.</p>
-              <p class="warning">If you didn't request a password reset, please ignore this email and ensure your account is secure.</p>
-            </div>
-            <div class="footer">
-              <p>&copy; ${new Date().getFullYear()} EdMira. All rights reserved.</p>
-            </div>
-          </div>
+        <body style="font-family: Arial, sans-serif;">
+          <h2>Hello ${firstName},</h2>
+          <p>Your new verification code is:</p>
+          <div style="font-size:28px;font-weight:bold;color:#0a4d68;">${code}</div>
+          <p>This code expires in <strong>10 minutes</strong>.</p>
+          <p>If you didn’t request this, please ignore this email.</p>
+          <p>– The EdMira Team</p>
         </body>
       </html>
     `;
   }
 
-  /**
-   * Welcome email template
-   */
-  private getWelcomeEmailTemplate(firstName: string): string {
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #0a4d68; color: white; padding: 20px; text-align: center; }
-            .content { background-color: #f9f9f9; padding: 30px; }
-            .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-            .button { background-color: #0a4d68; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>Welcome to EdMira!</h1>
-            </div>
-            <div class="content">
-              <h2>Hello ${firstName},</h2>
-              <p>Your email has been successfully verified! Welcome to the EdMira community.</p>
-              <p>You can now access all features and connect with other medical students and professionals.</p>
-              <p>Thank you for joining us on this journey!</p>
-            </div>
-            <div class="footer">
-              <p>&copy; ${new Date().getFullYear()} EdMira. All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
+  /** 🔹 Personalized Welcome Text */
+  private getWelcomeMessage(firstName: string, userType: string): string {
+    if (userType === 'STUDENT') {
+      return `Hello ${firstName}! 🎓 Welcome to EdMira — your learning companion where you can connect with mentors and access premium medical learning materials.`;
+    }
+    if (userType === 'PROFESSIONAL') {
+      return `Hello Dr. ${firstName}! 👨‍⚕️ Welcome to EdMira — a place to share your expertise, mentor future medical professionals, and grow with the community.`;
+    }
+    return `Hello ${firstName}! 🌍 Welcome to EdMira — your hybrid access to both student and professional features.`;
   }
 }

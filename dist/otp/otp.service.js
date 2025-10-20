@@ -8,54 +8,77 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a;
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OtpService = void 0;
 const common_1 = require("@nestjs/common");
-const otp_repository_1 = require("./otp.repository");
-const config_1 = require("@nestjs/config");
-const mongoose_1 = require("mongoose");
+const mongoose_1 = require("@nestjs/mongoose");
+const mongoose_2 = require("mongoose");
+const moment = require("moment");
+const otp_schema_1 = require("./schema/otp.schema");
 let OtpService = class OtpService {
-    constructor(repo, config) {
-        this.repo = repo;
-        this.config = config;
+    constructor(otpModel) {
+        this.otpModel = otpModel;
     }
-    generateCode() {
+    generateOtpCode() {
         return Math.floor(100000 + Math.random() * 900000).toString();
     }
-    async createOtp(userId, purpose) {
-        const minutes = this.config.get('OTP_EXPIRES_MINUTES') || 10;
-        const code = this.generateCode();
-        const expiresAt = new Date(Date.now() + minutes * 60 * 1000);
-        const objectId = typeof userId === 'string' ? new mongoose_1.Types.ObjectId(userId) : userId;
-        const otp = await this.repo.create({ userId: objectId, code, purpose, expiresAt });
-        return otp;
+    async createOtp(userId, email) {
+        const otpCode = this.generateOtpCode();
+        const expiresAt = moment().add(10, 'minutes').toDate();
+        await this.otpModel.deleteMany({ userId });
+        await this.otpModel.create({
+            userId,
+            email,
+            code: otpCode,
+            expiresAt,
+            attemptCount: 0,
+            verified: false,
+        });
+        return otpCode;
     }
-    async canResend(userId, purpose) {
-        const latest = await this.repo.findLatest(userId, purpose);
-        if (!latest)
-            return true;
-        const cooldown = this.config.get('OTP_RESEND_COOLDOWN_SECONDS') || 60;
-        const nextAllowed = new Date(latest.createdAt.getTime() + cooldown * 1000);
-        return Date.now() >= nextAllowed.getTime();
+    async verifyOtp(userId, code) {
+        const otp = await this.otpModel.findOne({ userId });
+        if (!otp)
+            throw new common_1.BadRequestException('OTP not found');
+        if (otp.attemptCount >= 3) {
+            throw new common_1.BadRequestException('Account locked due to multiple failed OTP attempts');
+        }
+        if (moment().isAfter(otp.expiresAt)) {
+            throw new common_1.BadRequestException('OTP has expired');
+        }
+        if (otp.code !== code) {
+            otp.attemptCount += 1;
+            await otp.save();
+            const remaining = 3 - otp.attemptCount;
+            throw new common_1.BadRequestException(`Invalid OTP. ${remaining > 0 ? `${remaining} attempt(s) left.` : 'Account locked.'}`);
+        }
+        otp.verified = true;
+        otp.attemptCount = 0;
+        await otp.save();
+        return true;
     }
-    async verifyOtp(userId, code, purpose) {
-        const latest = await this.repo.findLatest(userId, purpose);
-        if (!latest)
-            throw new common_1.NotFoundException('OTP not found');
-        if (latest.isUsed)
-            throw new common_1.BadRequestException('OTP already used');
-        if (latest.code !== code)
-            throw new common_1.BadRequestException('Invalid OTP code');
-        if (latest.expiresAt.getTime() < Date.now())
-            throw new common_1.BadRequestException('OTP expired');
-        await this.repo.markUsed(latest._id.toString());
-        return latest;
+    async resendOtp(userId, email) {
+        await this.otpModel.deleteMany({ userId });
+        const newCode = this.generateOtpCode();
+        const expiresAt = moment().add(10, 'minutes').toDate();
+        await this.otpModel.create({
+            userId,
+            email,
+            code: newCode,
+            expiresAt,
+            attemptCount: 0,
+            verified: false,
+        });
+        return newCode;
     }
 };
 exports.OtpService = OtpService;
 exports.OtpService = OtpService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeof (_a = typeof otp_repository_1.OtpRepository !== "undefined" && otp_repository_1.OtpRepository) === "function" ? _a : Object, config_1.ConfigService])
+    __param(0, (0, mongoose_1.InjectModel)(otp_schema_1.Otp.name)),
+    __metadata("design:paramtypes", [mongoose_2.Model])
 ], OtpService);
 //# sourceMappingURL=otp.service.js.map

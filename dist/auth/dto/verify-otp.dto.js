@@ -16,10 +16,10 @@ class VerifyOtpDto {
 exports.VerifyOtpDto = VerifyOtpDto;
 __decorate([
     (0, class_validator_1.IsEmail)(),
-    __metadata("design:type", Object)
-], VerifyOtpDto.prototype, "e", void 0);
+    __metadata("design:type", String)
+], VerifyOtpDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], VerifyOtpDto.prototype, "otp", void 0);
+], VerifyOtpDto.prototype, "code", void 0);
 //# sourceMappingURL=verify-otp.dto.js.map

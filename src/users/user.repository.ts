@@ -1,7 +1,8 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { User, UserDocument } from './schemas/user.schema';
+import { User, UserDocument } from './model/user.model';
+
 
 @Injectable()
 export class UsersRepository {
@@ -42,7 +43,7 @@ export class UsersRepository {
   // Dummy profile completion calculator (replace with real logic if needed)
   calculateProfileCompletion(userData: Partial<User>): number {
     // Example: 100 if all required fields are present, else 0
-    if (userData.firstName && userData.lastName && userData.email && userData.password && userData.role) {
+    if (userData.firstName && userData.lastName && userData.email && userData.password ) {
       return 100;
     }
     return 0;
@@ -72,3 +73,4 @@ export class UsersRepository {
     return this.userModel.findByIdAndUpdate(newUserId, { 'referral.referredBy': referrer._id }).exec();
   }
 }
+

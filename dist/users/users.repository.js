@@ -16,7 +16,7 @@ exports.UsersRepository = void 0;
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
-const user_schema_1 = require("./schemas/user.schema");
+const users_schema_1 = require("./schema/users.schema");
 let UsersRepository = class UsersRepository {
     constructor(userModel) {
         this.userModel = userModel;
@@ -45,7 +45,7 @@ let UsersRepository = class UsersRepository {
         return user.save();
     }
     calculateProfileCompletion(userData) {
-        if (userData.firstName && userData.lastName && userData.email && userData.password && userData.role) {
+        if (userData.firstName && userData.lastName && userData.email && userData.password) {
             return 100;
         }
         return 0;
@@ -73,7 +73,7 @@ let UsersRepository = class UsersRepository {
 exports.UsersRepository = UsersRepository;
 exports.UsersRepository = UsersRepository = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, mongoose_1.InjectModel)(user_schema_1.User.name)),
+    __param(0, (0, mongoose_1.InjectModel)(users_schema_1.User.name)),
     __metadata("design:paramtypes", [mongoose_2.Model])
 ], UsersRepository);
 //# sourceMappingURL=users.repository.js.map
