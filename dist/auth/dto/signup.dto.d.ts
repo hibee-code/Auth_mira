@@ -1,17 +1,6 @@
 import { UserType } from '../../common/enum/user-type.enum';
-declare class StudentProfileDto {
-    institution: string;
-    faculty: string;
-    department: string;
-    levelType: string;
-    level: string;
-}
-declare class ProfessionalProfileDto {
-    title: string;
-    fieldOfSpecialization: string;
-    organization: string;
-    yearsOfExperience: string;
-}
+import { StudentProfileDto } from './studentProfile.dto';
+import { ProfessionalProfileDto } from './professionalProfile.dto';
 export declare class SignupDto {
     firstName: string;
     lastName: string;
@@ -24,4 +13,3 @@ export declare class SignupDto {
     countryCode?: string;
     phoneNumber?: string;
 }
-export {};

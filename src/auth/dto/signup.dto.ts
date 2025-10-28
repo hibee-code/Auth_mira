@@ -1,4 +1,3 @@
-// src/auth/dto/signup.dto.ts
 import {
   IsEmail,
   IsNotEmpty,
@@ -10,24 +9,13 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { UserType } from '../../common/enum/user-type.enum';
+import { StudentProfileDto } from './studentProfile.dto';
+import { ProfessionalProfileDto } from './professionalProfile.dto';
 
 
-class StudentProfileDto {
-  @IsString() @IsNotEmpty() institution: string;
-  @IsString() @IsNotEmpty() faculty: string;
-  @IsString() @IsNotEmpty() department: string;
-  @IsString() @IsNotEmpty() levelType: string;
-  @IsString() @IsNotEmpty() level: string;
-}
-
-class ProfessionalProfileDto {
-  @IsString() @IsNotEmpty() title: string;
-  @IsString() @IsNotEmpty() fieldOfSpecialization: string;
-  @IsString() @IsNotEmpty() organization: string;
-  @IsString() @IsNotEmpty() yearsOfExperience: string;
-}
 
 export class SignupDto {
+
   @IsString() @IsNotEmpty() firstName: string;
   @IsString() @IsNotEmpty() lastName: string;
   @IsString() @IsNotEmpty() username: string;

@@ -13,55 +13,8 @@ exports.SignupDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 const user_type_enum_1 = require("../../common/enum/user-type.enum");
-class StudentProfileDto {
-}
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], StudentProfileDto.prototype, "institution", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], StudentProfileDto.prototype, "faculty", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], StudentProfileDto.prototype, "department", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], StudentProfileDto.prototype, "levelType", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], StudentProfileDto.prototype, "level", void 0);
-class ProfessionalProfileDto {
-}
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], ProfessionalProfileDto.prototype, "title", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], ProfessionalProfileDto.prototype, "fieldOfSpecialization", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], ProfessionalProfileDto.prototype, "organization", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], ProfessionalProfileDto.prototype, "yearsOfExperience", void 0);
+const studentProfile_dto_1 = require("./studentProfile.dto");
+const professionalProfile_dto_1 = require("./professionalProfile.dto");
 class SignupDto {
 }
 exports.SignupDto = SignupDto;
@@ -96,14 +49,14 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.ValidateNested)(),
-    (0, class_transformer_1.Type)(() => StudentProfileDto),
-    __metadata("design:type", StudentProfileDto)
+    (0, class_transformer_1.Type)(() => studentProfile_dto_1.StudentProfileDto),
+    __metadata("design:type", studentProfile_dto_1.StudentProfileDto)
 ], SignupDto.prototype, "studentProfile", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.ValidateNested)(),
-    (0, class_transformer_1.Type)(() => ProfessionalProfileDto),
-    __metadata("design:type", ProfessionalProfileDto)
+    (0, class_transformer_1.Type)(() => professionalProfile_dto_1.ProfessionalProfileDto),
+    __metadata("design:type", professionalProfile_dto_1.ProfessionalProfileDto)
 ], SignupDto.prototype, "professionalProfile", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),

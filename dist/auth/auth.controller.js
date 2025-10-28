@@ -21,6 +21,7 @@ const resend_otp_dto_1 = require("./dto/resend-otp.dto");
 const rest_password_dto_1 = require("./dto/rest-password.dto");
 const signup_dto_1 = require("./dto/signup.dto");
 const verify_otp_dto_1 = require("./dto/verify-otp.dto");
+const public_decorator_1 = require("../common/decorators/public.decorator");
 let AuthController = class AuthController {
     constructor(authService) {
         this.authService = authService;
@@ -46,6 +47,7 @@ let AuthController = class AuthController {
 };
 exports.AuthController = AuthController;
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('signup'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -53,6 +55,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "signup", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('verify'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -60,6 +63,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "verify", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('resend-otp'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -67,6 +71,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "resendOtp", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('login'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -74,6 +79,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "login", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('forgot-password'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -81,6 +87,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "forgotPassword", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('reset-password'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
