@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Exclude } from 'class-transformer';
 import mongoose, { QueryWithHelpers } from "mongoose";
 import { GenderType } from "src/common/enum/gender.enum";
 import { PhoneNumber, PhoneNumberSchema } from "../schema/phoneNumber.schema";
@@ -6,15 +7,16 @@ import { Address, AddressSchema } from "../schema/address.schema";
 import { UserType } from "src/common/enum/user-type.enum";
 import { StudentProfile, StudentProfileSchema } from "../schema/studentProfile.schema";
 import { ProfessionalProfile, ProfessionalProfileSchema } from "../schema/professionalProfile.schema";
-import { HybridProfile, HybridProfileSchema } from "../schema/hybridProfile.schema";
+
 
 @Schema()
 export class User {
-   _id?: mongoose.Schema.Types.ObjectId;
+  _id?: mongoose.Schema.Types.ObjectId;
 
   @Prop()
   email: string;
 
+  @Exclude()
   @Prop()
   password: string;
 
@@ -46,7 +48,7 @@ export class User {
 
   @Prop()
   role: string;
-    @Prop({ enum: Object.values(UserType)})
+  @Prop({ enum: Object.values(UserType) })
   userType: UserType;
 
   @Prop({ type: StudentProfileSchema })
@@ -55,24 +57,37 @@ export class User {
   @Prop({ type: ProfessionalProfileSchema })
   professionalProfile?: ProfessionalProfile;
 
-  @Prop({ type: HybridProfileSchema })
-  hybridProfile?: HybridProfile;
+
 
   @Prop({ default: false })
   isVerified: boolean;
 
 
+  @Exclude()
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
   createdBy: mongoose.Schema.Types.ObjectId;
 
+  @Exclude()
   @Prop({ type: Date })
   deletedAt: Date;
 
+  @Exclude()
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'State' })
   stateId: mongoose.Schema.Types.ObjectId;
 
+  @Exclude()
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
   lastModifiedBy: mongoose.Schema.Types.ObjectId;
+
+  @Exclude()
+  @Prop()
+  refreshToken?: string;
+
+  @Prop()
+  socialId?: string;
+
+  @Prop()
+  provider?: string;
 }
 
 export type UserDocument = User & mongoose.Document;

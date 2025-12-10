@@ -17,6 +17,13 @@ export declare class AuthController {
     }>;
     login(dto: LoginDto): Promise<{
         accessToken: string;
+        refreshToken: string;
+    }>;
+    logout(userId: string): Promise<void>;
+    getProfile(user: any): any;
+    refreshTokens(userId: string, refreshToken: string): Promise<{
+        accessToken: string;
+        refreshToken: string;
     }>;
     forgotPassword(dto: ForgotPasswordDto): Promise<{
         message: string;
@@ -24,4 +31,12 @@ export declare class AuthController {
     resetPassword(dto: ResetPasswordDto): Promise<{
         message: string;
     }>;
+    googleLogin(): void;
+    googleLoginCallback(req: any, res: any): Promise<void>;
+    linkedinLogin(): void;
+    linkedinLoginCallback(req: any, res: any): Promise<void>;
+    microsoftLogin(): void;
+    microsoftLoginCallback(req: any, res: any): Promise<void>;
+    appleLogin(): void;
+    appleLoginCallback(req: any, res: any): Promise<void>;
 }

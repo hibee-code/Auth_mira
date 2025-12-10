@@ -8,14 +8,17 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/rest-password.dto';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { User, UserDocument } from 'src/users/model/user.model';
 export declare class AuthService {
     private readonly userModel;
     private readonly emailService;
     private readonly otpService;
     private jwtService;
-    constructor(userModel: Model<UserDocument>, emailService: EmailService, otpService: OtpService, jwtService: JwtService);
+    private configService;
+    constructor(userModel: Model<UserDocument>, emailService: EmailService, otpService: OtpService, jwtService: JwtService, configService: ConfigService);
     signup(signupDto: SignupDto): Promise<User>;
+    private validateProfiles;
     verifyEmail(dto: VerifyOtpDto): Promise<{
         message: string;
     }>;
@@ -24,6 +27,17 @@ export declare class AuthService {
     }>;
     login(dto: LoginDto): Promise<{
         accessToken: string;
+        refreshToken: string;
+    }>;
+    logout(userId: string): Promise<void>;
+    refreshTokens(userId: string, rt: string): Promise<{
+        accessToken: string;
+        refreshToken: string;
+    }>;
+    updateRtHash(userId: any, rt: string): Promise<void>;
+    getTokens(userId: any, email: string, userType: string): Promise<{
+        accessToken: string;
+        refreshToken: string;
     }>;
     forgotPassword(dto: ForgotPasswordDto): Promise<{
         message: string;
@@ -31,4 +45,5 @@ export declare class AuthService {
     resetPassword(dto: ResetPasswordDto): Promise<{
         message: string;
     }>;
+    validateSocialLogin(profile: any): Promise<any>;
 }

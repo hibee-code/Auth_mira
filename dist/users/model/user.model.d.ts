@@ -5,7 +5,6 @@ import { Address } from "../schema/address.schema";
 import { UserType } from "src/common/enum/user-type.enum";
 import { StudentProfile } from "../schema/studentProfile.schema";
 import { ProfessionalProfile } from "../schema/professionalProfile.schema";
-import { HybridProfile } from "../schema/hybridProfile.schema";
 export declare class User {
     _id?: mongoose.Schema.Types.ObjectId;
     email: string;
@@ -22,12 +21,14 @@ export declare class User {
     userType: UserType;
     studentProfile?: StudentProfile;
     professionalProfile?: ProfessionalProfile;
-    hybridProfile?: HybridProfile;
     isVerified: boolean;
     createdBy: mongoose.Schema.Types.ObjectId;
     deletedAt: Date;
     stateId: mongoose.Schema.Types.ObjectId;
     lastModifiedBy: mongoose.Schema.Types.ObjectId;
+    refreshToken?: string;
+    socialId?: string;
+    provider?: string;
 }
 export type UserDocument = User & mongoose.Document;
 export declare const userModel: mongoose.Schema<User, mongoose.Model<User, any, any, any, mongoose.Document<unknown, any, User> & User & Required<{

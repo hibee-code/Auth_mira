@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.userModel = exports.User = void 0;
 const mongoose_1 = require("@nestjs/mongoose");
+const class_transformer_1 = require("class-transformer");
 const mongoose_2 = require("mongoose");
 const gender_enum_1 = require("../../common/enum/gender.enum");
 const phoneNumber_schema_1 = require("../schema/phoneNumber.schema");
@@ -18,7 +19,6 @@ const address_schema_1 = require("../schema/address.schema");
 const user_type_enum_1 = require("../../common/enum/user-type.enum");
 const studentProfile_schema_1 = require("../schema/studentProfile.schema");
 const professionalProfile_schema_1 = require("../schema/professionalProfile.schema");
-const hybridProfile_schema_1 = require("../schema/hybridProfile.schema");
 let User = class User {
     get fullName() {
         return `${this.firstName} ${this.lastName}`;
@@ -30,6 +30,7 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "email", void 0);
 __decorate([
+    (0, class_transformer_1.Exclude)(),
     (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
 ], User.prototype, "password", void 0);
@@ -83,29 +84,42 @@ __decorate([
     __metadata("design:type", professionalProfile_schema_1.ProfessionalProfile)
 ], User.prototype, "professionalProfile", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ type: hybridProfile_schema_1.HybridProfileSchema }),
-    __metadata("design:type", hybridProfile_schema_1.HybridProfile)
-], User.prototype, "hybridProfile", void 0);
-__decorate([
     (0, mongoose_1.Prop)({ default: false }),
     __metadata("design:type", Boolean)
 ], User.prototype, "isVerified", void 0);
 __decorate([
+    (0, class_transformer_1.Exclude)(),
     (0, mongoose_1.Prop)({ type: mongoose_2.default.Schema.Types.ObjectId, ref: 'User' }),
     __metadata("design:type", mongoose_2.default.Schema.Types.ObjectId)
 ], User.prototype, "createdBy", void 0);
 __decorate([
+    (0, class_transformer_1.Exclude)(),
     (0, mongoose_1.Prop)({ type: Date }),
     __metadata("design:type", Date)
 ], User.prototype, "deletedAt", void 0);
 __decorate([
+    (0, class_transformer_1.Exclude)(),
     (0, mongoose_1.Prop)({ type: mongoose_2.default.Schema.Types.ObjectId, ref: 'State' }),
     __metadata("design:type", mongoose_2.default.Schema.Types.ObjectId)
 ], User.prototype, "stateId", void 0);
 __decorate([
+    (0, class_transformer_1.Exclude)(),
     (0, mongoose_1.Prop)({ type: mongoose_2.default.Schema.Types.ObjectId, ref: 'User' }),
     __metadata("design:type", mongoose_2.default.Schema.Types.ObjectId)
 ], User.prototype, "lastModifiedBy", void 0);
+__decorate([
+    (0, class_transformer_1.Exclude)(),
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], User.prototype, "refreshToken", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], User.prototype, "socialId", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], User.prototype, "provider", void 0);
 exports.User = User = __decorate([
     (0, mongoose_1.Schema)()
 ], User);

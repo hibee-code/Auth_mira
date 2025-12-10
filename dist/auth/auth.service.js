@@ -21,28 +21,48 @@ const mailer_service_1 = require("../mailer/mailer.service");
 const user_type_enum_1 = require("../common/enum/user-type.enum");
 const otp_service_1 = require("../otp/otp.service");
 const jwt_1 = require("@nestjs/jwt");
+const config_1 = require("@nestjs/config");
 const user_model_1 = require("../users/model/user.model");
 let AuthService = class AuthService {
-    constructor(userModel, emailService, otpService, jwtService) {
+    constructor(userModel, emailService, otpService, jwtService, configService) {
         this.userModel = userModel;
         this.emailService = emailService;
         this.otpService = otpService;
         this.jwtService = jwtService;
+        this.configService = configService;
     }
     async signup(signupDto) {
+        this.validateProfiles(signupDto);
         const { password, userType, studentProfile, professionalProfile, ...rest } = signupDto;
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new this.userModel({
             ...rest,
             password: hashedPassword,
             userType,
-            studentProfile: userType !== user_type_enum_1.UserType.PROFESSIONAL ? studentProfile : undefined,
-            professionalProfile: userType !== user_type_enum_1.UserType.STUDENT ? professionalProfile : undefined,
+            studentProfile: (userType === user_type_enum_1.UserType.STUDENT || userType === user_type_enum_1.UserType.HYBRID)
+                ? studentProfile
+                : undefined,
+            professionalProfile: (userType === user_type_enum_1.UserType.PROFESSIONAL || userType === user_type_enum_1.UserType.HYBRID)
+                ? professionalProfile
+                : undefined,
         });
         const savedUser = await user.save();
         const otpCode = await this.otpService.createOtp(savedUser.id, savedUser.email);
         await this.emailService.sendWelcomeAndVerificationEmail(savedUser.email, savedUser.firstName, userType, otpCode);
         return savedUser;
+    }
+    validateProfiles(dto) {
+        if (dto.userType === user_type_enum_1.UserType.STUDENT && !dto.studentProfile) {
+            throw new common_1.BadRequestException('Student profile is required for Student users');
+        }
+        if (dto.userType === user_type_enum_1.UserType.PROFESSIONAL && !dto.professionalProfile) {
+            throw new common_1.BadRequestException('Professional profile is required for Professional users');
+        }
+        if (dto.userType === user_type_enum_1.UserType.HYBRID) {
+            if (!dto.studentProfile || !dto.professionalProfile) {
+                throw new common_1.BadRequestException('Both Student and Professional profiles are required for Hybrid users');
+            }
+        }
     }
     async verifyEmail(dto) {
         const user = await this.userModel.findOne({ email: dto.email });
@@ -70,9 +90,43 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('Invalid credentials');
         if (!user.isVerified)
             throw new common_1.UnauthorizedException('Please verify your email first');
-        const payload = { sub: user._id, email: user.email, userType: user.userType };
-        const accessToken = this.jwtService.sign(payload);
-        return { accessToken };
+        const tokens = await this.getTokens(user._id, user.email, user.userType);
+        await this.updateRtHash(user._id, tokens.refreshToken);
+        return tokens;
+    }
+    async logout(userId) {
+        await this.userModel.updateOne({ _id: userId }, { refreshToken: null });
+    }
+    async refreshTokens(userId, rt) {
+        const user = await this.userModel.findById(userId);
+        if (!user || !user.refreshToken)
+            throw new common_1.UnauthorizedException('Access Denied');
+        const rtMatches = await bcrypt.compare(rt, user.refreshToken);
+        if (!rtMatches)
+            throw new common_1.UnauthorizedException('Access Denied');
+        const tokens = await this.getTokens(user._id, user.email, user.userType);
+        await this.updateRtHash(user._id, tokens.refreshToken);
+        return tokens;
+    }
+    async updateRtHash(userId, rt) {
+        const hash = await bcrypt.hash(rt, 10);
+        await this.userModel.updateOne({ _id: userId }, { refreshToken: hash });
+    }
+    async getTokens(userId, email, userType) {
+        const [at, rt] = await Promise.all([
+            this.jwtService.signAsync({ sub: userId, email, userType }, {
+                secret: this.configService.get('JWT_SECRET'),
+                expiresIn: '15m',
+            }),
+            this.jwtService.signAsync({ sub: userId, email, userType }, {
+                secret: this.configService.get('JWT_REFRESH_SECRET'),
+                expiresIn: '7d',
+            }),
+        ]);
+        return {
+            accessToken: at,
+            refreshToken: rt,
+        };
     }
     async forgotPassword(dto) {
         const user = await this.userModel.findOne({ email: dto.email });
@@ -91,6 +145,33 @@ let AuthService = class AuthService {
         await user.save();
         return { message: 'Password reset successful' };
     }
+    async validateSocialLogin(profile) {
+        const { email, firstName, lastName, socialId, provider, picture } = profile;
+        let user = await this.userModel.findOne({ email });
+        if (user) {
+            if (!user.socialId) {
+                user.socialId = socialId;
+                user.provider = provider;
+                await user.save();
+            }
+            return user;
+        }
+        const randomPassword = Math.random().toString(36).slice(-8) + '1A!';
+        const hashedPassword = await bcrypt.hash(randomPassword, 10);
+        user = new this.userModel({
+            email,
+            firstName,
+            lastName,
+            username: email.split('@')[0],
+            password: hashedPassword,
+            socialId,
+            provider,
+            userType: user_type_enum_1.UserType.STUDENT,
+            isVerified: true,
+        });
+        await user.save();
+        return user;
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
@@ -99,6 +180,7 @@ exports.AuthService = AuthService = __decorate([
     __metadata("design:paramtypes", [mongoose_2.Model,
         mailer_service_1.EmailService,
         otp_service_1.OtpService,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        config_1.ConfigService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

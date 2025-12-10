@@ -39,7 +39,8 @@ __decorate([
 ], SignupDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(6),
+    (0, class_validator_1.MinLength)(8),
+    (0, class_validator_1.Matches)(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, { message: 'Password too weak. Must contain at least 1 uppercase, 1 lowercase, and 1 number or special character' }),
     __metadata("design:type", String)
 ], SignupDto.prototype, "password", void 0);
 __decorate([

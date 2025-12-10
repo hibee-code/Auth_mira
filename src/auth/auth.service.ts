@@ -13,6 +13,7 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/rest-password.dto';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { User, UserDocument } from 'src/users/model/user.model';
 
 
@@ -24,31 +25,52 @@ export class AuthService {
     private readonly emailService: EmailService,
     private readonly otpService: OtpService,
     private jwtService: JwtService,
-  ) {}
+    private configService: ConfigService,
+  ) { }
 
 
-async signup(signupDto: SignupDto): Promise<User> {
-  const { password, userType, studentProfile, professionalProfile, ...rest } = signupDto;
-  const hashedPassword = await bcrypt.hash(password, 10);
+  async signup(signupDto: SignupDto): Promise<User> {
+    this.validateProfiles(signupDto);
 
-  const user = new this.userModel({
-    ...rest,
-    password: hashedPassword,
-    userType,
-    studentProfile: userType !== UserType.PROFESSIONAL ? studentProfile : undefined,
-    professionalProfile: userType !== UserType.STUDENT ? professionalProfile : undefined,
-  });
+    const { password, userType, studentProfile, professionalProfile, ...rest } = signupDto;
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  const savedUser = await user.save();
+    const user = new this.userModel({
+      ...rest,
+      password: hashedPassword,
+      userType,
+      studentProfile: (userType === UserType.STUDENT || userType === UserType.HYBRID)
+        ? studentProfile
+        : undefined,
+      professionalProfile: (userType === UserType.PROFESSIONAL || userType === UserType.HYBRID)
+        ? professionalProfile
+        : undefined,
+    });
 
-  // Generate OTP and send welcome message together
-  const otpCode = await this.otpService.createOtp(savedUser.id, savedUser.email);
-  await this.emailService.sendWelcomeAndVerificationEmail(savedUser.email, savedUser.firstName, userType, otpCode);
+    const savedUser = await user.save();
 
-  return savedUser;
-}
+    // Generate OTP and send welcome message together
+    const otpCode = await this.otpService.createOtp(savedUser.id, savedUser.email);
+    await this.emailService.sendWelcomeAndVerificationEmail(savedUser.email, savedUser.firstName, userType, otpCode);
 
-async verifyEmail(dto: VerifyOtpDto): Promise<{ message: string }> {
+    return savedUser;
+  }
+
+  private validateProfiles(dto: SignupDto) {
+    if (dto.userType === UserType.STUDENT && !dto.studentProfile) {
+      throw new BadRequestException('Student profile is required for Student users');
+    }
+    if (dto.userType === UserType.PROFESSIONAL && !dto.professionalProfile) {
+      throw new BadRequestException('Professional profile is required for Professional users');
+    }
+    if (dto.userType === UserType.HYBRID) {
+      if (!dto.studentProfile || !dto.professionalProfile) {
+        throw new BadRequestException('Both Student and Professional profiles are required for Hybrid users');
+      }
+    }
+  }
+
+  async verifyEmail(dto: VerifyOtpDto): Promise<{ message: string }> {
     const user = await this.userModel.findOne({ email: dto.email });
     if (!user) throw new BadRequestException('User not found');
 
@@ -59,16 +81,16 @@ async verifyEmail(dto: VerifyOtpDto): Promise<{ message: string }> {
     return { message: 'Email verified successfully' };
   }
 
-async resendOtp(dto: ResendOtpDto) {
-  const user = await this.userModel.findOne({ email: dto.email });
-  if (!user) throw new BadRequestException('User not found');
+  async resendOtp(dto: ResendOtpDto) {
+    const user = await this.userModel.findOne({ email: dto.email });
+    if (!user) throw new BadRequestException('User not found');
 
-  const otp = await this.otpService.createOtp(user._id, user.email);
-  await this.emailService.sendResendOtpEmail(user.email, user.firstName, otp);
+    const otp = await this.otpService.createOtp(user._id, user.email);
+    await this.emailService.sendResendOtpEmail(user.email, user.firstName, otp);
 
-  return { message: 'New verification code sent successfully.' };
-}
-  async login(dto: LoginDto): Promise<{ accessToken: string }> {
+    return { message: 'New verification code sent successfully.' };
+  }
+  async login(dto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
     const user = await this.userModel.findOne({ email: dto.email });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
@@ -76,10 +98,54 @@ async resendOtp(dto: ResendOtpDto) {
     if (!valid) throw new UnauthorizedException('Invalid credentials');
     if (!user.isVerified) throw new UnauthorizedException('Please verify your email first');
 
-    const payload = { sub: user._id, email: user.email, userType: user.userType };
-    const accessToken = this.jwtService.sign(payload);
+    const tokens = await this.getTokens(user._id, user.email, user.userType);
+    await this.updateRtHash(user._id, tokens.refreshToken);
+    return tokens;
+  }
 
-    return { accessToken };
+  async logout(userId: string) {
+    await this.userModel.updateOne({ _id: userId }, { refreshToken: null });
+  }
+
+  async refreshTokens(userId: string, rt: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user || !user.refreshToken) throw new UnauthorizedException('Access Denied');
+
+    const rtMatches = await bcrypt.compare(rt, user.refreshToken);
+    if (!rtMatches) throw new UnauthorizedException('Access Denied');
+
+    const tokens = await this.getTokens(user._id, user.email, user.userType);
+    await this.updateRtHash(user._id, tokens.refreshToken);
+    return tokens;
+  }
+
+  async updateRtHash(userId: any, rt: string) {
+    const hash = await bcrypt.hash(rt, 10);
+    await this.userModel.updateOne({ _id: userId }, { refreshToken: hash });
+  }
+
+  async getTokens(userId: any, email: string, userType: string) {
+    const [at, rt] = await Promise.all([
+      this.jwtService.signAsync(
+        { sub: userId, email, userType },
+        {
+          secret: this.configService.get<string>('JWT_SECRET'),
+          expiresIn: '15m',
+        },
+      ),
+      this.jwtService.signAsync(
+        { sub: userId, email, userType },
+        {
+          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+          expiresIn: '7d',
+        },
+      ),
+    ]);
+
+    return {
+      accessToken: at,
+      refreshToken: rt,
+    };
   }
 
   async forgotPassword(dto: ForgotPasswordDto) {
@@ -100,5 +166,43 @@ async resendOtp(dto: ResendOtpDto) {
     await user.save();
 
     return { message: 'Password reset successful' };
+  }
+
+  async validateSocialLogin(profile: any): Promise<any> {
+    const { email, firstName, lastName, socialId, provider, picture } = profile;
+
+    // 1. Check if user exists by email
+    let user = await this.userModel.findOne({ email });
+
+    if (user) {
+      // 2. If exists, update social ID if not present (Account linking)
+      if (!user.socialId) {
+        user.socialId = socialId;
+        user.provider = provider;
+        await user.save();
+      }
+      return user;
+    }
+
+    // 3. Create new user
+    // Note: We need a password for the schema even if social login.
+    // We'll generate a random strong password.
+    const randomPassword = Math.random().toString(36).slice(-8) + '1A!'; // Basic random
+    const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+    user = new this.userModel({
+      email,
+      firstName,
+      lastName,
+      username: email.split('@')[0], // Generate username from email
+      password: hashedPassword,
+      socialId,
+      provider,
+      userType: UserType.STUDENT, // Default to Student, user can update later
+      isVerified: true, // Social login implies email verification usually
+    });
+
+    await user.save();
+    return user;
   }
 }

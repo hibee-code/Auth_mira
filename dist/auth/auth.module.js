@@ -18,6 +18,11 @@ const auth_service_1 = require("./auth.service");
 const otp_service_1 = require("../otp/otp.service");
 const otp_repository_1 = require("../otp/otp.repository");
 const jwt_strategy_1 = require("./jwt/jwt.strategy");
+const rt_strategy_1 = require("./jwt/rt.strategy");
+const google_strategy_1 = require("./strategies/google.strategy");
+const linkedin_strategy_1 = require("./strategies/linkedin.strategy");
+const microsoft_strategy_1 = require("./strategies/microsoft.strategy");
+const apple_strategy_1 = require("./strategies/apple.strategy");
 const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
 const roles_guard_1 = require("../common/guards/roles.guard");
 const mailer_service_1 = require("../mailer/mailer.service");
@@ -53,6 +58,11 @@ exports.AuthModule = AuthModule = __decorate([
             otp_repository_1.OtpRepository,
             mailer_service_1.EmailService,
             jwt_strategy_1.JwtStrategy,
+            rt_strategy_1.RtStrategy,
+            google_strategy_1.GoogleStrategy,
+            linkedin_strategy_1.LinkedInStrategy,
+            microsoft_strategy_1.MicrosoftStrategy,
+            apple_strategy_1.AppleStrategy,
             { provide: core_1.APP_GUARD, useClass: jwt_auth_guard_1.JwtAuthGuard },
             { provide: core_1.APP_GUARD, useClass: roles_guard_1.RolesGuard },
         ],

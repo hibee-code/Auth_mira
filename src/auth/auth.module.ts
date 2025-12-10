@@ -10,6 +10,11 @@ import { AuthService } from './auth.service';
 import { OtpService } from '../otp/otp.service';
 import { OtpRepository } from '../otp/otp.repository';
 import { JwtStrategy } from './jwt/jwt.strategy';
+import { RtStrategy } from './jwt/rt.strategy';
+import { GoogleStrategy } from './strategies/google.strategy'; // Social Strategies
+import { LinkedInStrategy } from './strategies/linkedin.strategy';
+import { MicrosoftStrategy } from './strategies/microsoft.strategy';
+import { AppleStrategy } from './strategies/apple.strategy';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { EmailService } from '../mailer/mailer.service';
@@ -52,6 +57,11 @@ import { User, userModel } from 'src/users/model/user.model';
     OtpRepository,
     EmailService,
     JwtStrategy,
+    RtStrategy, // Added RtStrategy to providers
+    GoogleStrategy,
+    LinkedInStrategy,
+    MicrosoftStrategy,
+    AppleStrategy,
 
     /**
      * ✅ Guards registered globally
@@ -62,4 +72,4 @@ import { User, userModel } from 'src/users/model/user.model';
 
   exports: [AuthService],
 })
-export class AuthModule {}
+export class AuthModule { }
