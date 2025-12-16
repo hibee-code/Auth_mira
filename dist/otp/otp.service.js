@@ -40,9 +40,12 @@ let OtpService = class OtpService {
         return otpCode;
     }
     async verifyOtp(userId, code) {
-        const otp = await this.otpModel.findOne({ userId });
-        if (!otp)
+        const otp = await this.otpModel.findOne({
+            userId,
+        });
+        if (!otp) {
             throw new common_1.BadRequestException('OTP not found');
+        }
         if (otp.attemptCount >= 3) {
             throw new common_1.BadRequestException('Account locked due to multiple failed OTP attempts');
         }

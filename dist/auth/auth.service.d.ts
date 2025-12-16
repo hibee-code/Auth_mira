@@ -1,4 +1,4 @@
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { SignupDto } from './dto/signup.dto';
 import { EmailService } from '../mailer/mailer.service';
 import { OtpService } from '../otp/otp.service';
@@ -37,7 +37,7 @@ export declare class AuthService {
         accessToken: string;
         refreshToken: string;
     }>;
-    updateRtHash(userId: any, rt: string): Promise<void>;
+    updateRtHash(userId: Types.ObjectId, rt: string): Promise<void>;
     getTokens(userId: any, email: string, userType: string): Promise<{
         accessToken: string;
         refreshToken: string;

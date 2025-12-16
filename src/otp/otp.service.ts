@@ -14,11 +14,10 @@ export class OtpService {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  async createOtp(userId: any, email: string): Promise<string> {
+  async createOtp(userId: Types.ObjectId, email: string): Promise<string> {
     const otpCode = this.generateOtpCode();
     const expiresAt = moment().add(10, 'minutes').toDate();
 
-    // Delete old OTPs for the same user
     await this.otpModel.deleteMany({ userId });
 
     await this.otpModel.create({
@@ -33,14 +32,9 @@ export class OtpService {
     return otpCode;
   }
 
-  async verifyOtp(userId: string, code: string): Promise<boolean> {
-    // Validate MongoDB ObjectId
-    if (!Types.ObjectId.isValid(userId)) {
-      throw new BadRequestException('Invalid user ID');
-    }
-
+  async verifyOtp(userId: Types.ObjectId, code: string): Promise<boolean> {
     const otp = await this.otpModel.findOne({
-      userId: new Types.ObjectId(userId),
+      userId,
     });
 
     if (!otp) {
@@ -48,17 +42,14 @@ export class OtpService {
     }
 
 
-    // If too many failed attempts
     if (otp.attemptCount >= 3) {
       throw new BadRequestException('Account locked due to multiple failed OTP attempts');
     }
 
-    // Check expiration
     if (moment().isAfter(otp.expiresAt)) {
       throw new BadRequestException('OTP has expired');
     }
 
-    // Incorrect code
     if (otp.code !== code) {
       otp.attemptCount += 1;
       await otp.save();
@@ -76,10 +67,7 @@ export class OtpService {
     return true;
   }
 
-  /**
-   * Resend OTP — resets attemptCount and verified state
-   */
-  async resendOtp(userId: any, email: string): Promise<string> {
+  async resendOtp(userId: Types.ObjectId, email: string): Promise<string> {
     // Remove all existing OTPs and reset
     await this.otpModel.deleteMany({ userId });
 

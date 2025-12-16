@@ -1,7 +1,7 @@
 // src/auth/auth.service.ts
 import { Injectable, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { SignupDto } from './dto/signup.dto';
 import { EmailService } from '../mailer/mailer.service';
@@ -147,7 +147,7 @@ export class AuthService {
     return tokens;
   }
 
-  async updateRtHash(userId: any, rt: string) {
+  async updateRtHash(userId: Types.ObjectId, rt: string) {
     const hash = await bcrypt.hash(rt, 10);
     await this.userModel.updateOne({ _id: userId }, { refreshToken: hash });
   }
@@ -187,7 +187,7 @@ export class AuthService {
 
   async resetPassword(dto: ResetPasswordDto) {
     const user = await this.userModel.findOne({ email: dto.email });
-    if (!user) throw new BadRequestException('User not found');
+    if (!user) throw new BadRequestException('Email not found');
 
     await this.otpService.verifyOtp(user._id, dto.code);
     user.password = await bcrypt.hash(dto.newPassword, 10);
@@ -222,12 +222,12 @@ export class AuthService {
       email,
       firstName,
       lastName,
-      username: email.split('@')[0], // Generate username from email
+      username: email.split('@')[0],
       password: hashedPassword,
       socialId,
       provider,
-      userType: UserType.STUDENT, // Default to Student, user can update later
-      isVerified: true, // Social login implies email verification usually
+      userType: UserType.STUDENT,
+      isVerified: true,
     });
 
     await user.save();

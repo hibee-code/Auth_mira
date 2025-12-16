@@ -1,6 +1,6 @@
 export enum LevelType {
-  UNDERGRADUATE = 'UNDERGRADUATE',
-  POSTGRADUATE = 'POSTGRADUATE'
+  UNDERGRADUATE = 'Undergraduate',
+  POSTGRADUATE = 'Postgraduate'
 }
 
 export enum Level {

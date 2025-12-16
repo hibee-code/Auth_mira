@@ -8,98 +8,102 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var EmailService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EmailService = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const nodemailer = require("nodemailer");
-let EmailService = class EmailService {
+let EmailService = EmailService_1 = class EmailService {
     constructor(configService) {
         this.configService = configService;
+        this.logger = new common_1.Logger(EmailService_1.name);
         this.transporter = nodemailer.createTransport({
-            host: this.configService.get('MAIL_HOST'),
-            port: this.configService.get('MAIL_PORT'),
+            host: this.getEnv('MAIL_HOST'),
+            port: Number(this.getEnv('MAIL_PORT')),
             secure: false,
             auth: {
-                user: this.configService.get('MAIL_USER'),
-                pass: this.configService.get('MAIL_PASSWORD'),
+                user: this.getEnv('MAIL_USER'),
+                pass: this.getEnv('MAIL_PASSWORD'),
+            },
+            tls: {
+                rejectUnauthorized: false,
             },
         });
     }
-    async sendWelcomeAndVerificationEmail(email, firstName, userType, code) {
-        const subject = this.getEmailSubject('welcome_verify');
-        const html = this.getWelcomeVerificationTemplate(firstName, userType, code);
-        await this.sendMail(email, subject, html);
-    }
-    async sendResendOtpEmail(email, firstName, code) {
-        const subject = this.getEmailSubject('resend_otp');
-        const html = this.getResendOtpTemplate(firstName, code);
-        await this.sendMail(email, subject, html);
-    }
-    async sendPasswordReset(email, code) {
-        const subject = this.getEmailSubject('reset');
-        const html = `
-      <h2>Password Reset</h2>
-      <p>Your password reset code is:</p>
-      <div style="font-size:24px;font-weight:bold;color:#0a4d68;">${code}</div>
-      <p>This code expires in <strong>10 minutes</strong>.</p>
-    `;
-        await this.sendMail(email, subject, html);
-    }
-    async sendMail(to, subject, html) {
+    async onModuleInit() {
         try {
-            const mailOptions = {
-                from: `EdMira <${this.configService.get('MAIL_FROM')}>`,
-                to,
-                subject,
-                html,
-            };
-            await this.transporter.sendMail(mailOptions);
-            console.log(`Email sent successfully to ${to}`);
+            await this.transporter.verify();
+            this.logger.log('Gmail SMTP connection established successfully');
         }
         catch (error) {
-            console.error(`Error sending email to ${to}:`, error);
+            this.logger.error(' Gmail SMTP connection failed', error);
             throw error;
         }
     }
-    getEmailSubject(type) {
-        switch (type) {
-            case 'welcome_verify':
-                return 'Welcome to EdMira - Verify Your Account';
-            case 'resend_otp':
-                return 'EdMira - Your New Verification Code';
-            case 'reset':
-                return 'Reset Your Password - EdMira';
-            default:
-                return 'EdMira Notification';
+    async sendWelcomeAndVerificationEmail(email, firstName, userType, code) {
+        await this.sendMail({
+            to: email,
+            subject: 'Welcome to EdMira Verify Your Account',
+            html: this.getWelcomeVerificationTemplate(firstName, userType, code),
+        });
+    }
+    async sendResendOtpEmail(email, firstName, code) {
+        await this.sendMail({
+            to: email,
+            subject: 'EdMira Your New Verification Code',
+            html: this.getResendOtpTemplate(firstName, code),
+        });
+    }
+    async sendPasswordReset(email, code) {
+        await this.sendMail({
+            to: email,
+            subject: 'Reset Your Password EdMira',
+            html: `
+        <h2>Password Reset</h2>
+        <p>Your reset code is:</p>
+        <div style="font-size:24px;font-weight:bold;color:#0a4d68;">${code}</div>
+        <p>This code expires in <strong>10 minutes</strong>.</p>
+      `,
+        });
+    }
+    async sendMail(options) {
+        try {
+            await this.transporter.sendMail({
+                from: `EdMira <${this.getEnv('MAIL_FROM')}>`,
+                ...options,
+            });
+            this.logger.log(`Email sent to ${options.to}`);
         }
+        catch (error) {
+            this.logger.error(`Failed to send email to ${options.to}`, error);
+            throw error;
+        }
+    }
+    getEnv(key) {
+        const value = this.configService.get(key);
+        if (!value) {
+            throw new Error(`Missing required environment variable: ${key}`);
+        }
+        return value;
     }
     getWelcomeVerificationTemplate(firstName, userType, code) {
         const welcomeMessage = this.getWelcomeMessage(firstName, userType);
         return `
-      <!DOCTYPE html>
       <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; color: #333; background-color: #f6f8fa; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; background: white; border-radius: 8px; }
-            .header { background-color: #0a4d68; color: white; text-align: center; padding: 15px; border-radius: 8px 8px 0 0; }
-            .content { padding: 25px; line-height: 1.6; }
-            .code-box { background-color: #eef6ff; border: 2px dashed #0a4d68; text-align: center; padding: 15px; margin: 20px 0; border-radius: 6px; }
-            .code { font-size: 28px; font-weight: bold; color: #0a4d68; letter-spacing: 4px; }
-            .footer { text-align: center; color: #777; font-size: 12px; padding: 10px; margin-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header"><h1>Welcome to EdMira!</h1></div>
-            <div class="content">
-              <p>${welcomeMessage}</p>
-              <p>Please verify your email using the code below:</p>
-              <div class="code-box"><div class="code">${code}</div></div>
-              <p>This code will expire in <strong>10 minutes</strong>.</p>
+        <body style="font-family: Arial, sans-serif; background:#f6f8fa;">
+          <div style="max-width:600px;margin:auto;background:#fff;padding:20px;border-radius:8px;">
+            <h1 style="background:#0a4d68;color:#fff;padding:15px;text-align:center;">
+              Welcome to EdMira
+            </h1>
+            <p>${welcomeMessage}</p>
+            <p>Please verify your email using the code below:</p>
+            <div style="font-size:28px;font-weight:bold;color:#0a4d68;text-align:center;">
+              ${code}
             </div>
-            <div class="footer">&copy; ${new Date().getFullYear()} EdMira</div>
+            <p>This code expires in <strong>10 minutes</strong>.</p>
+            <hr />
+            <small>&copy; ${new Date().getFullYear()} EdMira</small>
           </div>
         </body>
       </html>
@@ -108,29 +112,30 @@ let EmailService = class EmailService {
     getResendOtpTemplate(firstName, code) {
         return `
       <html>
-        <body style="font-family: Arial, sans-serif;">
+        <body>
           <h2>Hello ${firstName},</h2>
-          <p>Your new verification code is:</p>
-          <div style="font-size:28px;font-weight:bold;color:#0a4d68;">${code}</div>
-          <p>This code expires in <strong>10 minutes</strong>.</p>
-          <p>If you didn’t request this, please ignore this email.</p>
-          <p>– The EdMira Team</p>
+          <p>Your new verification code:</p>
+          <div style="font-size:28px;font-weight:bold;color:#0a4d68;">
+            ${code}
+          </div>
+          <p>This code expires in 10 minutes.</p>
+          <p>EdMira Team</p>
         </body>
       </html>
     `;
     }
     getWelcomeMessage(firstName, userType) {
         if (userType === 'STUDENT') {
-            return `Hello ${firstName}! 🎓 Welcome to EdMira — your learning companion where you can connect with mentors and access premium medical learning materials.`;
+            return `Hello ${firstName}! Welcome to EdMira, your learning companion.`;
         }
         if (userType === 'PROFESSIONAL') {
-            return `Hello Dr. ${firstName}! 👨‍⚕️ Welcome to EdMira — a place to share your expertise, mentor future medical professionals, and grow with the community.`;
+            return `Hello Dr. ${firstName}! Welcome to EdMira, share knowledge and mentor others.`;
         }
-        return `Hello ${firstName}! 🌍 Welcome to EdMira — your hybrid access to both student and professional features.`;
+        return `Hello ${firstName}! Welcome to EdMira.`;
     }
 };
 exports.EmailService = EmailService;
-exports.EmailService = EmailService = __decorate([
+exports.EmailService = EmailService = EmailService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [config_1.ConfigService])
 ], EmailService);

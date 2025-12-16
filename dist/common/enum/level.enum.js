@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Level = exports.LevelType = void 0;
 var LevelType;
 (function (LevelType) {
-    LevelType["UNDERGRADUATE"] = "UNDERGRADUATE";
-    LevelType["POSTGRADUATE"] = "POSTGRADUATE";
+    LevelType["UNDERGRADUATE"] = "Undergraduate";
+    LevelType["POSTGRADUATE"] = "Postgraduate";
 })(LevelType || (exports.LevelType = LevelType = {}));
 var Level;
 (function (Level) {

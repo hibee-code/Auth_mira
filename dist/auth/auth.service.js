@@ -163,7 +163,7 @@ let AuthService = class AuthService {
     async resetPassword(dto) {
         const user = await this.userModel.findOne({ email: dto.email });
         if (!user)
-            throw new common_1.BadRequestException('User not found');
+            throw new common_1.BadRequestException('Email not found');
         await this.otpService.verifyOtp(user._id, dto.code);
         user.password = await bcrypt.hash(dto.newPassword, 10);
         await user.save();
