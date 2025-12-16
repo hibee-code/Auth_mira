@@ -31,11 +31,11 @@ let AuthController = class AuthController {
     constructor(authService) {
         this.authService = authService;
     }
-    signup(dto) {
-        return this.authService.signup(dto);
+    signup(signUp) {
+        return this.authService.signup(signUp);
     }
-    verify(dto) {
-        return this.authService.verifyEmail(dto);
+    verify(otp) {
+        return this.authService.verifyOtp(otp);
     }
     resendOtp(dto) {
         return this.authService.resendOtp(dto);

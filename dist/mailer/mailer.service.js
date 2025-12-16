@@ -47,13 +47,20 @@ let EmailService = class EmailService {
         await this.sendMail(email, subject, html);
     }
     async sendMail(to, subject, html) {
-        const mailOptions = {
-            from: `EdMira <${this.configService.get('MAIL_FROM')}>`,
-            to,
-            subject,
-            html,
-        };
-        await this.transporter.sendMail(mailOptions);
+        try {
+            const mailOptions = {
+                from: `EdMira <${this.configService.get('MAIL_FROM')}>`,
+                to,
+                subject,
+                html,
+            };
+            await this.transporter.sendMail(mailOptions);
+            console.log(`Email sent successfully to ${to}`);
+        }
+        catch (error) {
+            console.error(`Error sending email to ${to}:`, error);
+            throw error;
+        }
     }
     getEmailSubject(type) {
         switch (type) {

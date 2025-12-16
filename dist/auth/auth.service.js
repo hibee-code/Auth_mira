@@ -33,6 +33,10 @@ let AuthService = class AuthService {
     }
     async signup(signupDto) {
         this.validateProfiles(signupDto);
+        const existingUser = await this.userModel.findOne({ email: signupDto.email });
+        if (existingUser) {
+            throw new common_1.ConflictException('Email already in use');
+        }
         const { password, userType, studentProfile, professionalProfile, ...rest } = signupDto;
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new this.userModel({
@@ -47,9 +51,19 @@ let AuthService = class AuthService {
                 : undefined,
         });
         const savedUser = await user.save();
-        const otpCode = await this.otpService.createOtp(savedUser.id, savedUser.email);
-        await this.emailService.sendWelcomeAndVerificationEmail(savedUser.email, savedUser.firstName, userType, otpCode);
-        return savedUser;
+        try {
+            const otpCode = await this.otpService.createOtp(savedUser.id, savedUser.email);
+            await this.emailService.sendWelcomeAndVerificationEmail(savedUser.email, savedUser.firstName, userType, otpCode);
+        }
+        catch (error) {
+            console.error('Failed to send welcome email:', error);
+        }
+        const userObject = savedUser.toObject();
+        delete userObject.password;
+        return {
+            message: 'Signup successful. Please check your email for the verification code.',
+            user: userObject,
+        };
     }
     validateProfiles(dto) {
         if (dto.userType === user_type_enum_1.UserType.STUDENT && !dto.studentProfile) {
@@ -64,14 +78,24 @@ let AuthService = class AuthService {
             }
         }
     }
-    async verifyEmail(dto) {
+    async verifyOtp(dto) {
         const user = await this.userModel.findOne({ email: dto.email });
-        if (!user)
+        if (!user) {
             throw new common_1.BadRequestException('User not found');
-        await this.otpService.verifyOtp(user._id, dto.code);
-        user.isVerified = true;
-        await user.save();
-        return { message: 'Email verified successfully' };
+        }
+        if (user.isVerified) {
+            return { message: 'User is already verified' };
+        }
+        try {
+            await this.otpService.verifyOtp(user._id, dto.code);
+            user.isVerified = true;
+            await user.save();
+            return { message: 'OTP verified successfully. Account activated.' };
+        }
+        catch (error) {
+            console.error(`OTP Verification failed for ${dto.email}:`, error.message);
+            throw error;
+        }
     }
     async resendOtp(dto) {
         const user = await this.userModel.findOne({ email: dto.email });

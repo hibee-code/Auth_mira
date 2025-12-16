@@ -17,9 +17,12 @@ export declare class AuthService {
     private jwtService;
     private configService;
     constructor(userModel: Model<UserDocument>, emailService: EmailService, otpService: OtpService, jwtService: JwtService, configService: ConfigService);
-    signup(signupDto: SignupDto): Promise<User>;
+    signup(signupDto: SignupDto): Promise<{
+        message: string;
+        user: Partial<User>;
+    }>;
     private validateProfiles;
-    verifyEmail(dto: VerifyOtpDto): Promise<{
+    verifyOtp(dto: VerifyOtpDto): Promise<{
         message: string;
     }>;
     resendOtp(dto: ResendOtpDto): Promise<{

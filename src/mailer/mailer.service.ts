@@ -52,13 +52,19 @@ export class EmailService {
 
   /** 🔹 Internal Mail Sender */
   private async sendMail(to: string, subject: string, html: string): Promise<void> {
-    const mailOptions = {
-      from: `EdMira <${this.configService.get('MAIL_FROM')}>`,
-      to,
-      subject,
-      html,
-    };
-    await this.transporter.sendMail(mailOptions);
+    try {
+      const mailOptions = {
+        from: `EdMira <${this.configService.get('MAIL_FROM')}>`,
+        to,
+        subject,
+        html,
+      };
+      await this.transporter.sendMail(mailOptions);
+      console.log(`Email sent successfully to ${to}`);
+    } catch (error) {
+      console.error(`Error sending email to ${to}:`, error);
+      throw error; // Re-throw to let the caller handle decisions (e.g., signup flow)
+    }
   }
 
   /** 🔹 Dynamic Subject Resolver */

@@ -29,8 +29,13 @@ export class AuthService {
   ) { }
 
 
-  async signup(signupDto: SignupDto): Promise<User> {
+  async signup(signupDto: SignupDto): Promise<{ message: string; user: Partial<User> }> {
     this.validateProfiles(signupDto);
+
+    const existingUser = await this.userModel.findOne({ email: signupDto.email });
+    if (existingUser) {
+      throw new ConflictException('Email already in use');
+    }
 
     const { password, userType, studentProfile, professionalProfile, ...rest } = signupDto;
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -49,11 +54,24 @@ export class AuthService {
 
     const savedUser = await user.save();
 
-    // Generate OTP and send welcome message together
-    const otpCode = await this.otpService.createOtp(savedUser.id, savedUser.email);
-    await this.emailService.sendWelcomeAndVerificationEmail(savedUser.email, savedUser.firstName, userType, otpCode);
+    try {
+      // Generate OTP and send welcome message together
+      const otpCode = await this.otpService.createOtp(savedUser.id, savedUser.email);
+      await this.emailService.sendWelcomeAndVerificationEmail(savedUser.email, savedUser.firstName, userType, otpCode);
+    } catch (error) {
+      console.error('Failed to send welcome email:', error);
+      // We don't throw here to avoid rolling back valid user creation, but in real world maybe we should.
+      // For now, let's just log it so we can debug.
+    }
 
-    return savedUser;
+    // Return sanitized user object (using class-transformer would be better globally, but manual here ensures safety immediately)
+    const userObject = savedUser.toObject();
+    delete userObject.password;
+
+    return {
+      message: 'Signup successful. Please check your email for the verification code.',
+      user: userObject,
+    };
   }
 
   private validateProfiles(dto: SignupDto) {
@@ -70,15 +88,25 @@ export class AuthService {
     }
   }
 
-  async verifyEmail(dto: VerifyOtpDto): Promise<{ message: string }> {
+  async verifyOtp(dto: VerifyOtpDto): Promise<{ message: string }> {
     const user = await this.userModel.findOne({ email: dto.email });
-    if (!user) throw new BadRequestException('User not found');
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
 
-    await this.otpService.verifyOtp(user._id, dto.code);
-    user.isVerified = true;
-    await user.save();
+    if (user.isVerified) {
+      return { message: 'User is already verified' };
+    }
 
-    return { message: 'Email verified successfully' };
+    try {
+      await this.otpService.verifyOtp(user._id, dto.code);
+      user.isVerified = true;
+      await user.save();
+      return { message: 'OTP verified successfully. Account activated.' };
+    } catch (error) {
+      console.error(`OTP Verification failed for ${dto.email}:`, error.message);
+      throw error; // Re-throw the BadRequestException from OtpService
+    }
   }
 
   async resendOtp(dto: ResendOtpDto) {

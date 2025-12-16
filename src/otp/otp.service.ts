@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as moment from 'moment';
 import { Otp } from './schema/otp.schema';
 
@@ -8,13 +8,13 @@ import { Otp } from './schema/otp.schema';
 export class OtpService {
   constructor(
     @InjectModel(Otp.name) private readonly otpModel: Model<Otp>,
-  ) {}
+  ) { }
 
   private generateOtpCode(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  async createOtp(userId: string, email: string): Promise<string> {
+  async createOtp(userId: any, email: string): Promise<string> {
     const otpCode = this.generateOtpCode();
     const expiresAt = moment().add(10, 'minutes').toDate();
 
@@ -34,9 +34,19 @@ export class OtpService {
   }
 
   async verifyOtp(userId: string, code: string): Promise<boolean> {
-    const otp = await this.otpModel.findOne({ userId });
+    // Validate MongoDB ObjectId
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('Invalid user ID');
+    }
 
-    if (!otp) throw new BadRequestException('OTP not found');
+    const otp = await this.otpModel.findOne({
+      userId: new Types.ObjectId(userId),
+    });
+
+    if (!otp) {
+      throw new BadRequestException('OTP not found');
+    }
+
 
     // If too many failed attempts
     if (otp.attemptCount >= 3) {
@@ -69,7 +79,7 @@ export class OtpService {
   /**
    * Resend OTP — resets attemptCount and verified state
    */
-  async resendOtp(userId: string, email: string): Promise<string> {
+  async resendOtp(userId: any, email: string): Promise<string> {
     // Remove all existing OTPs and reset
     await this.otpModel.deleteMany({ userId });
 

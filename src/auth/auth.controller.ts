@@ -20,14 +20,14 @@ export class AuthController {
 
   @Public()
   @Post('signup')
-  signup(@Body() dto: SignupDto) {
-    return this.authService.signup(dto);
+  signup(@Body() signUp: SignupDto) {
+    return this.authService.signup(signUp);
   }
 
   @Public()
   @Post('verify')
-  verify(@Body() dto: VerifyOtpDto) {
-    return this.authService.verifyEmail(dto);
+  verify(@Body() otp: VerifyOtpDto) {
+    return this.authService.verifyOtp(otp);
   }
 
   @Public()

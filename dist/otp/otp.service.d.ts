@@ -4,7 +4,7 @@ export declare class OtpService {
     private readonly otpModel;
     constructor(otpModel: Model<Otp>);
     private generateOtpCode;
-    createOtp(userId: string, email: string): Promise<string>;
-    verifyOtp(userId: string, code: string): Promise<boolean>;
-    resendOtp(userId: string, email: string): Promise<string>;
+    createOtp(userId: any, email: string): Promise<string>;
+    verifyOtp(userId: any, code: string): Promise<boolean>;
+    resendOtp(userId: any, email: string): Promise<string>;
 }

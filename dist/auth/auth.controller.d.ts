@@ -8,8 +8,11 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
-    signup(dto: SignupDto): Promise<import("../users/model/user.model").User>;
-    verify(dto: VerifyOtpDto): Promise<{
+    signup(signUp: SignupDto): Promise<{
+        message: string;
+        user: Partial<import("../users/model/user.model").User>;
+    }>;
+    verify(otp: VerifyOtpDto): Promise<{
         message: string;
     }>;
     resendOtp(dto: ResendOtpDto): Promise<{
