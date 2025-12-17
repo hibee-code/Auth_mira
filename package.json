@@ -19,6 +19,7 @@
     "@nestjs/mongoose": "^10.0.0",
     "@nestjs/passport": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/swagger": "^7.0.0",
     "@nestjs/throttler": "^6.5.0",
     "bcrypt": "^5.1.0",
     "cache-manager": "^7.2.7",
@@ -36,7 +37,8 @@
     "passport-linkedin-oauth2": "^2.0.0",
     "passport-microsoft": "^2.1.0",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

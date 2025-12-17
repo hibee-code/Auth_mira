@@ -16,6 +16,7 @@ exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const passport_1 = require("@nestjs/passport");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const swagger_1 = require("@nestjs/swagger");
 const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
 const get_current_user_decorator_1 = require("../common/decorators/get-current-user.decorator");
 const rt_guard_1 = require("./jwt/rt.guard");
@@ -95,6 +96,9 @@ exports.AuthController = AuthController;
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('signup'),
+    (0, swagger_1.ApiOperation)({ summary: 'Register a new user' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'User successfully registered. OTP sent.' }),
+    (0, swagger_1.ApiResponse)({ status: 409, description: 'Email already exists.' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [signup_dto_1.SignupDto]),
@@ -103,6 +107,9 @@ __decorate([
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('verify'),
+    (0, swagger_1.ApiOperation)({ summary: 'Verify email with OTP' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Email verified successfully.' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid or expired OTP.' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [verify_otp_dto_1.VerifyOtpDto]),
@@ -111,6 +118,8 @@ __decorate([
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('resend-otp'),
+    (0, swagger_1.ApiOperation)({ summary: 'Resend OTP to email' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'OTP resent successfully.' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [resend_otp_dto_1.ResendOtpDto]),
@@ -119,6 +128,9 @@ __decorate([
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('login'),
+    (0, swagger_1.ApiOperation)({ summary: 'Log in user' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Login successful. Returns access and refresh tokens.' }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: 'Invalid credentials or unverified email.' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [login_dto_1.LoginDto]),
@@ -126,6 +138,9 @@ __decorate([
 ], AuthController.prototype, "login", null);
 __decorate([
     (0, common_1.Post)('logout'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Log out user' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Logout successful.' }),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, get_current_user_decorator_1.GetCurrentUser)('userId')),
     __metadata("design:type", Function),
@@ -135,6 +150,9 @@ __decorate([
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)('profile'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get current user profile' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Returns user profile.' }),
     (0, common_1.UseInterceptors)(cache_manager_1.CacheInterceptor),
     (0, cache_manager_1.CacheKey)('user_profile'),
     (0, cache_manager_1.CacheTTL)(300),
@@ -147,6 +165,9 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.UseGuards)(rt_guard_1.RtGuard),
     (0, common_1.Post)('refresh'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Refresh access token' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Tokens refreshed.' }),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, get_current_user_decorator_1.GetCurrentUser)('userId')),
     __param(1, (0, get_current_user_decorator_1.GetCurrentUser)('refreshToken')),
@@ -157,6 +178,8 @@ __decorate([
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('forgot-password'),
+    (0, swagger_1.ApiOperation)({ summary: 'Request password reset' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Reset code sent.' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [forgot_password_dto_1.ForgotPasswordDto]),
@@ -165,6 +188,8 @@ __decorate([
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('reset-password'),
+    (0, swagger_1.ApiOperation)({ summary: 'Reset password' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Password reset successful.' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [rest_password_dto_1.ResetPasswordDto]),
@@ -174,6 +199,7 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('google')),
     (0, common_1.Get)('google'),
+    (0, swagger_1.ApiOperation)({ summary: 'Login with Google' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -182,6 +208,7 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('google')),
     (0, common_1.Get)('google/callback'),
+    (0, swagger_1.ApiOperation)({ summary: 'Google Login Callback' }),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
@@ -192,6 +219,7 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('linkedin')),
     (0, common_1.Get)('linkedin'),
+    (0, swagger_1.ApiOperation)({ summary: 'Login with LinkedIn' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -200,6 +228,7 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('linkedin')),
     (0, common_1.Get)('linkedin/callback'),
+    (0, swagger_1.ApiOperation)({ summary: 'LinkedIn Login Callback' }),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
@@ -210,6 +239,7 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('microsoft')),
     (0, common_1.Get)('microsoft'),
+    (0, swagger_1.ApiOperation)({ summary: 'Login with Microsoft' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -218,6 +248,7 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('microsoft')),
     (0, common_1.Get)('microsoft/callback'),
+    (0, swagger_1.ApiOperation)({ summary: 'Microsoft Login Callback' }),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
@@ -228,6 +259,7 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('apple')),
     (0, common_1.Get)('apple'),
+    (0, swagger_1.ApiOperation)({ summary: 'Login with Apple' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -236,6 +268,7 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('apple')),
     (0, common_1.Post)('apple/callback'),
+    (0, swagger_1.ApiOperation)({ summary: 'Apple Login Callback' }),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
@@ -243,6 +276,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "appleLoginCallback", null);
 exports.AuthController = AuthController = __decorate([
+    (0, swagger_1.ApiTags)('Auth'),
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])
 ], AuthController);

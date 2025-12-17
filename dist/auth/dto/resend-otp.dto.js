@@ -11,10 +11,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ResendOtpDto = void 0;
 const class_validator_1 = require("class-validator");
+const swagger_1 = require("@nestjs/swagger");
 class ResendOtpDto {
 }
 exports.ResendOtpDto = ResendOtpDto;
 __decorate([
+    (0, swagger_1.ApiProperty)({ example: 'john@example.com' }),
     (0, class_validator_1.IsEmail)(),
     __metadata("design:type", String)
 ], ResendOtpDto.prototype, "email", void 0);

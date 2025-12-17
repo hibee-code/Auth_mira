@@ -1,20 +1,25 @@
 import { IsString, IsNotEmpty, IsEnum } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 import { ProfessionalTitle } from "src/common/enum/title.enum";
 
 export class ProfessionalProfileDto {
-  @IsEnum(ProfessionalTitle)  // ← Add this instead of @IsString()
-  @IsNotEmpty() 
-  title: ProfessionalTitle;  // ← Change type to ProfessionalTitle
+  @ApiProperty({ enum: ProfessionalTitle, example: ProfessionalTitle.DR })
+  @IsEnum(ProfessionalTitle)
+  @IsNotEmpty()
+  title: ProfessionalTitle;
 
-  @IsString() 
-  @IsNotEmpty() 
+  @ApiProperty({ example: 'Cardiology' })
+  @IsString()
+  @IsNotEmpty()
   fieldOfSpecialization: string;
 
-  @IsString() 
-  @IsNotEmpty() 
+  @ApiProperty({ example: 'Teaching Hospital' })
+  @IsString()
+  @IsNotEmpty()
   organization: string;
 
-  @IsString()  // or @IsNumber() depending on your needs
-  @IsNotEmpty() 
+  @ApiProperty({ example: '5' })
+  @IsString()
+  @IsNotEmpty()
   yearsOfExperience: string;
 }

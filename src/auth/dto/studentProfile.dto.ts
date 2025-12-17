@@ -1,24 +1,29 @@
 import { IsString, IsNotEmpty } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class StudentProfileDto {
-  @IsString() 
-  @IsNotEmpty() 
+  @ApiProperty({ example: 'University of Lagos' })
+  @IsString()
+  @IsNotEmpty()
   institution: string;
 
-  @IsString() 
-  @IsNotEmpty() 
+  @ApiProperty({ example: 'Medical Sciences' })
+  @IsString()
+  @IsNotEmpty()
   faculty: string;
 
-  @IsString() 
-  @IsNotEmpty() 
+  @ApiProperty({ example: 'Medicine and Surgery' })
+  @IsString()
+  @IsNotEmpty()
   department: string;
 
-  @IsString() 
-  @IsNotEmpty() 
+  @ApiProperty({ example: 'Undergraduate' })
+  @IsString()
+  @IsNotEmpty()
   levelType: string;
 
-  @IsString() 
-  @IsNotEmpty() 
+  @ApiProperty({ example: '500L' })
+  @IsString()
+  @IsNotEmpty()
   level: string;
-  
 }

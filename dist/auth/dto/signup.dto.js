@@ -15,56 +15,67 @@ const class_transformer_1 = require("class-transformer");
 const user_type_enum_1 = require("../../common/enum/user-type.enum");
 const studentProfile_dto_1 = require("./studentProfile.dto");
 const professionalProfile_dto_1 = require("./professionalProfile.dto");
+const swagger_1 = require("@nestjs/swagger");
 class SignupDto {
 }
 exports.SignupDto = SignupDto;
 __decorate([
+    (0, swagger_1.ApiProperty)({ example: 'John' }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], SignupDto.prototype, "firstName", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ example: 'Doe' }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], SignupDto.prototype, "lastName", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ example: 'johndoe' }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], SignupDto.prototype, "username", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ example: 'john@example.com' }),
     (0, class_validator_1.IsEmail)(),
     __metadata("design:type", String)
 ], SignupDto.prototype, "email", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ example: 'StrongPass1!' }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(8),
     (0, class_validator_1.Matches)(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, { message: 'Password too weak. Must contain at least 1 uppercase, 1 lowercase, and 1 number or special character' }),
     __metadata("design:type", String)
 ], SignupDto.prototype, "password", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ enum: user_type_enum_1.UserType, example: user_type_enum_1.UserType.STUDENT }),
     (0, class_validator_1.IsEnum)(user_type_enum_1.UserType),
     __metadata("design:type", String)
 ], SignupDto.prototype, "userType", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ type: () => studentProfile_dto_1.StudentProfileDto, required: false }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.ValidateNested)(),
     (0, class_transformer_1.Type)(() => studentProfile_dto_1.StudentProfileDto),
     __metadata("design:type", studentProfile_dto_1.StudentProfileDto)
 ], SignupDto.prototype, "studentProfile", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ type: () => professionalProfile_dto_1.ProfessionalProfileDto, required: false }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.ValidateNested)(),
     (0, class_transformer_1.Type)(() => professionalProfile_dto_1.ProfessionalProfileDto),
     __metadata("design:type", professionalProfile_dto_1.ProfessionalProfileDto)
 ], SignupDto.prototype, "professionalProfile", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ example: '+234', required: false }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], SignupDto.prototype, "countryCode", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ example: '8012345678', required: false }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
