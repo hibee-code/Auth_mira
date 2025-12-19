@@ -4,6 +4,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
+import { HealthModule } from './health/health.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-store';
 import * as Joi from 'joi';
@@ -20,6 +21,7 @@ import * as Joi from 'joi';
         MONGODB_URI: Joi.string().required(),
         REDIS_HOST: Joi.string().required(),
         REDIS_PORT: Joi.number().required(),
+        REDIS_PASSWORD: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
         JWT_EXPIRES_IN: Joi.string().required(),
         JWT_REFRESH_SECRET: Joi.string().required(),
@@ -38,6 +40,7 @@ import * as Joi from 'joi';
         store: redisStore as any,
         host: configService.get<string>('REDIS_HOST'),
         port: configService.get<number>('REDIS_PORT'),
+        password: configService.get<string>('REDIS_PASSWORD'),
         ttl: 600,
       }),
       inject: [ConfigService],
@@ -54,6 +57,7 @@ import * as Joi from 'joi';
       inject: [ConfigService],
     }),
     AuthModule,
+    HealthModule,
   ],
   providers: [
     {
