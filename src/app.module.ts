@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { THROTTLER_LIMIT, THROTTLER_TTL } from './common/config/constants';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -46,8 +47,8 @@ import * as Joi from 'joi';
       inject: [ConfigService],
     }),
     ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 10,
+      ttl: THROTTLER_TTL,
+      limit: THROTTLER_LIMIT,
     }]),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],

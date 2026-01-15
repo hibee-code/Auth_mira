@@ -19,7 +19,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { EmailService } from '../mailer/mailer.service';
 import { Otp, OtpSchema } from '../otp/schema/otp.schema';
-import { User, userModel } from 'src/users/model/user.model';
+import { User, userModel } from '../users/model/user.model';
 
 
 @Module({

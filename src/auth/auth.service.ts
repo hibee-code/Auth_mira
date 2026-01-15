@@ -3,6 +3,8 @@ import { Injectable, ConflictException, UnauthorizedException, BadRequestExcepti
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import { JWT_ACCESS_EXPIRATION, JWT_REFRESH_EXPIRATION, SALT_ROUNDS } from '../common/config/constants';
 import { SignupDto } from './dto/signup.dto';
 import { EmailService } from '../mailer/mailer.service';
 import { UserType } from '../common/enum/user-type.enum';
@@ -14,7 +16,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/rest-password.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { User, UserDocument } from 'src/users/model/user.model';
+import { User, UserDocument } from '../users/model/user.model';
 
 
 
@@ -38,7 +40,7 @@ export class AuthService {
     }
 
     const { password, userType, studentProfile, professionalProfile, ...rest } = signupDto;
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     const user = new this.userModel({
       ...rest,
@@ -148,7 +150,7 @@ export class AuthService {
   }
 
   async updateRtHash(userId: Types.ObjectId, rt: string) {
-    const hash = await bcrypt.hash(rt, 10);
+    const hash = await bcrypt.hash(rt, SALT_ROUNDS);
     await this.userModel.updateOne({ _id: userId }, { refreshToken: hash });
   }
 
@@ -158,14 +160,14 @@ export class AuthService {
         { sub: userId, email, userType },
         {
           secret: this.configService.get<string>('JWT_SECRET'),
-          expiresIn: '15m',
+          expiresIn: JWT_ACCESS_EXPIRATION,
         },
       ),
       this.jwtService.signAsync(
         { sub: userId, email, userType },
         {
           secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-          expiresIn: '7d',
+          expiresIn: JWT_REFRESH_EXPIRATION,
         },
       ),
     ]);
@@ -190,7 +192,7 @@ export class AuthService {
     if (!user) throw new BadRequestException('Email not found');
 
     await this.otpService.verifyOtp(user._id, dto.code);
-    user.password = await bcrypt.hash(dto.newPassword, 10);
+    user.password = await bcrypt.hash(dto.newPassword, SALT_ROUNDS);
     await user.save();
 
     return { message: 'Password reset successful' };
@@ -215,8 +217,8 @@ export class AuthService {
     // 3. Create new user
     // Note: We need a password for the schema even if social login.
     // We'll generate a random strong password.
-    const randomPassword = Math.random().toString(36).slice(-8) + '1A!'; // Basic random
-    const hashedPassword = await bcrypt.hash(randomPassword, 10);
+    const randomPassword = crypto.randomBytes(16).toString('hex') + '1A!';
+    const hashedPassword = await bcrypt.hash(randomPassword, SALT_ROUNDS);
 
     user = new this.userModel({
       email,
