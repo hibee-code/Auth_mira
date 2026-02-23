@@ -1,5 +1,6 @@
 import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
@@ -7,13 +8,20 @@ import * as compression from 'compression';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
   app.setGlobalPrefix('api/v1');
 
   // Security & Optimization
   app.use(helmet());
   app.use(compression());
-  app.enableCors(); // Configure specifically for production as needed
+
+  const allowedOrigins = configService.get<string>('ALLOWED_ORIGINS', 'http://localhost:3000');
+  app.enableCors({
+    origin: allowedOrigins.split(',').map((o) => o.trim()),
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  });
 
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,

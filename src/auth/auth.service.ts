@@ -107,7 +107,7 @@ export class AuthService {
       return { message: 'OTP verified successfully. Account activated.' };
     } catch (error) {
       console.error(`OTP Verification failed for ${dto.email}:`, error.message);
-      throw error; // Re-throw the BadRequestException from OtpService
+      throw error;
     }
   }
 
@@ -124,9 +124,44 @@ export class AuthService {
     const user = await this.userModel.findOne({ email: dto.email });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
+    // Check if account is locked
+    if (user.lockedUntil && new Date() < user.lockedUntil) {
+      const minutesLeft = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
+      throw new UnauthorizedException(
+        `Account is locked due to too many failed attempts. Try again in ${minutesLeft} minute(s).`,
+      );
+    }
+
     const valid = await bcrypt.compare(dto.password, user.password);
-    if (!valid) throw new UnauthorizedException('Invalid credentials');
+    if (!valid) {
+      // Increment failed login attempts
+      user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+
+      const maxAttempts = this.configService.get<number>('AUTH_LOCK_ATTEMPTS', 5);
+      const lockTtlSeconds = this.configService.get<number>('AUTH_LOCK_TTL_SECONDS', 300);
+
+      if (user.failedLoginAttempts >= maxAttempts) {
+        user.lockedUntil = new Date(Date.now() + lockTtlSeconds * 1000);
+        await user.save();
+        throw new UnauthorizedException(
+          `Account locked due to ${maxAttempts} failed login attempts. Try again in ${lockTtlSeconds / 60} minutes.`,
+        );
+      }
+
+      await user.save();
+      const remaining = maxAttempts - user.failedLoginAttempts;
+      throw new UnauthorizedException(
+        `Invalid credentials. ${remaining} attempt(s) remaining before account lock.`,
+      );
+    }
+
     if (!user.isVerified) throw new UnauthorizedException('Please verify your email first');
+
+    // Reset failed login attempts on successful login
+    user.failedLoginAttempts = 0;
+    user.lockedUntil = undefined;
+    user.lastLogin = new Date();
+    await user.save();
 
     const tokens = await this.getTokens(user._id, user.email, user.userType);
     await this.updateRtHash(user._id, tokens.refreshToken);

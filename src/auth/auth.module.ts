@@ -41,9 +41,9 @@ import { User, userModel } from '../users/model/user.model';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'fallback_secret',
+        secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1h',
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN'),
         },
       }),
     }),

@@ -9,11 +9,11 @@ import { StudentProfile, StudentProfileSchema } from "../schema/studentProfile.s
 import { ProfessionalProfile, ProfessionalProfileSchema } from "../schema/professionalProfile.schema";
 
 
-@Schema()
+@Schema({ timestamps: true })
 export class User {
   _id?: mongoose.Schema.Types.ObjectId;
 
-  @Prop()
+  @Prop({ unique: true, required: true })
   email: string;
 
   @Exclude()
@@ -61,6 +61,13 @@ export class User {
 
   @Prop({ default: false })
   isVerified: boolean;
+
+  // Brute-force protection
+  @Prop({ default: 0 })
+  failedLoginAttempts: number;
+
+  @Prop({ type: Date })
+  lockedUntil?: Date;
 
 
   @Exclude()

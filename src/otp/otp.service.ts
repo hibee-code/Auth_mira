@@ -2,7 +2,10 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as moment from 'moment';
+import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
 import { Otp } from './schema/otp.schema';
+import { SALT_ROUNDS } from '../common/config/constants';
 
 @Injectable()
 export class OtpService {
@@ -11,11 +14,12 @@ export class OtpService {
   ) { }
 
   private generateOtpCode(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return crypto.randomInt(100000, 999999).toString();
   }
 
   async createOtp(userId: Types.ObjectId, email: string): Promise<string> {
     const otpCode = this.generateOtpCode();
+    const hashedCode = await bcrypt.hash(otpCode, SALT_ROUNDS);
     const expiresAt = moment().add(10, 'minutes').toDate();
 
     await this.otpModel.deleteMany({ userId });
@@ -23,13 +27,13 @@ export class OtpService {
     await this.otpModel.create({
       userId,
       email,
-      code: otpCode,
+      code: hashedCode,
       expiresAt,
       attemptCount: 0,
       verified: false,
     });
 
-    return otpCode;
+    return otpCode; // Return plaintext to send via email
   }
 
   async verifyOtp(userId: Types.ObjectId, code: string): Promise<boolean> {
@@ -41,7 +45,6 @@ export class OtpService {
       throw new BadRequestException('OTP not found');
     }
 
-
     if (otp.attemptCount >= 3) {
       throw new BadRequestException('Account locked due to multiple failed OTP attempts');
     }
@@ -50,7 +53,8 @@ export class OtpService {
       throw new BadRequestException('OTP has expired');
     }
 
-    if (otp.code !== code) {
+    const isMatch = await bcrypt.compare(code, otp.code);
+    if (!isMatch) {
       otp.attemptCount += 1;
       await otp.save();
       const remaining = 3 - otp.attemptCount;
@@ -68,22 +72,22 @@ export class OtpService {
   }
 
   async resendOtp(userId: Types.ObjectId, email: string): Promise<string> {
-    // Remove all existing OTPs and reset
     await this.otpModel.deleteMany({ userId });
 
-    // Create a new OTP with reset state
     const newCode = this.generateOtpCode();
+    const hashedCode = await bcrypt.hash(newCode, SALT_ROUNDS);
     const expiresAt = moment().add(10, 'minutes').toDate();
 
     await this.otpModel.create({
       userId,
       email,
-      code: newCode,
+      code: hashedCode,
       expiresAt,
       attemptCount: 0,
       verified: false,
     });
 
-    return newCode;
+    return newCode; // Return plaintext to send via email
   }
 }
+

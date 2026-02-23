@@ -1,6 +1,5 @@
-import { Body, Controller, Post, UseGuards, HttpCode, HttpStatus, Get, Req, Res, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, HttpCode, HttpStatus, Get, Req, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { GetCurrentUser } from '../common/decorators/get-current-user.decorator';
@@ -69,9 +68,6 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'Returns user profile.' })
-  @UseInterceptors(CacheInterceptor)
-  @CacheKey('user_profile')
-  @CacheTTL(300) // 5 minutes
   getProfile(@GetCurrentUser() user: any) {
     return user;
   }
